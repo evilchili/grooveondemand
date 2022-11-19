@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "grooveondemand"
+version = "0.1.0"
+description = "audio playlist server"
+authors = ["evilchili <evilchili@gmail.com>"]
+license = "MIT License"
+packages = [
+   { include = 'groove' }
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+bottle = "^0.12.23"
+typer = "^0.7.0"
+python-dotenv = "^0.21.0"
+Paste = "^3.5.2"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.2.0"
+pytest-asyncio = "^0.20.2"
+boddle = "^0.2.9"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry.scripts]
+groove = "groove.cli:app"
+
