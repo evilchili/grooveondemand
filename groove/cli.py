@@ -3,26 +3,19 @@ import os
 import typer
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from groove import ondemand
-from groove.db import metadata
+from groove import webserver
+from groove.db.manager import database_manager
 
 
 app = typer.Typer()
 
 
-@app.command()
 def initialize():
     load_dotenv()
-
-    # todo: abstract this and replace in_memory_db fixture
-    engine = create_engine(f"sqlite:///{os.environ.get('DATABASE_PATH')}", future=True)
-    Session = sessionmaker(bind=engine, future=True)
-    session = Session()
-    metadata.create_all(bind=engine)
-    session.close()
+    debug = os.getenv('DEBUG', None)
+    logging.basicConfig(format='%(asctime)s - %(message)s',
+                        level=logging.DEBUG if debug else logging.INFO)
 
 
 @app.command()
@@ -43,21 +36,11 @@ def server(
     """
     Start the Groove on Demand playlsit server.
     """
-    load_dotenv()
-
-    ondemand.initialize()
-
     print("Starting Groove On Demand...")
-
-    debug = os.getenv('DEBUG', None)
-    logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG if debug else logging.INFO)
-    ondemand.server.run(
-        host=os.getenv('HOST', host),
-        port=os.getenv('PORT', port),
-        debug=debug,
-        server='paste',
-        quiet=True
-    )
+    initialize()
+    with database_manager as manager:
+        manager.import_from_filesystem()
+    webserver.start(host=host, port=port, debug=debug)
 
 
 if __name__ == '__main__':

@@ -7,23 +7,18 @@ import atheris
 import bottle
 from boddle import boddle
 
-from groove import ondemand
-
-
-@pytest.fixture(autouse=True, scope='session')
-def init_db():
-    ondemand.initialize()
+from groove import webserver
 
 
 def test_server():
     with boddle():
-        ondemand.index()
+        webserver.index()
         assert bottle.response.status_code == 200
 
 
 def test_auth_with_valid_credentials():
     with boddle(auth=(os.environ.get('USERNAME'), os.environ.get('PASSWORD'))):
-        ondemand.build()
+        webserver.build()
         assert bottle.response.status_code == 200
 
 
@@ -31,7 +26,7 @@ def test_auth_random_input():
 
     def auth(fuzzed_input):
         with boddle(auth=(fuzzed_input, fuzzed_input)):
-            response = ondemand.build()
+            response = webserver.build()
             assert response.status_code == 401
 
     atheris.Setup([sys.argv[0], "-atheris_runs=100000"], auth)
@@ -49,11 +44,11 @@ def test_auth_random_input():
 ])
 def test_playlist(db, slug, expected):
     with boddle():
-        response = ondemand.get_playlist(slug, db)
+        response = webserver.get_playlist(slug, db)
         assert response.status_code == expected
 
 
 def test_playlist_on_empty_db(in_memory_db):
     with boddle():
-        response = ondemand.get_playlist('some-slug', in_memory_db)
+        response = webserver.get_playlist('some-slug', in_memory_db)
         assert response.status_code == 404

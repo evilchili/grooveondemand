@@ -11,11 +11,20 @@ from groove.helper import PlaylistDatabaseHelper
 server = bottle.Bottle()
 
 
-def initialize():
+def start(host: str, port: int, debug: bool) -> None:
     """
-    Configure the sqlite database.
+    Start the Bottle app.
     """
+    logging.debug(f"Configuring sqllite using {os.environ.get('DATABASE_PATH')}")
     server.install(sqlite.Plugin(dbfile=os.environ.get('DATABASE_PATH')))
+    logging.debug(f"Configuring webserver with host={host}, port={port}, debug={debug}")
+    server.run(
+        host=os.getenv('HOST', host),
+        port=os.getenv('PORT', port),
+        debug=debug,
+        server='paste',
+        quiet=True
+    )
 
 
 @server.route('/')
