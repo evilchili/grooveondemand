@@ -32,7 +32,7 @@ def test_auth_random_input():
     def auth(fuzzed_input):
         with boddle(auth=(fuzzed_input, fuzzed_input)):
             response = ondemand.build()
-            assert response.status_code == 403
+            assert response.status_code == 401
 
     atheris.Setup([sys.argv[0], "-atheris_runs=100000"], auth)
     try:
