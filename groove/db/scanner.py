@@ -36,7 +36,7 @@ class MediaScanner:
         return self._glob
 
     def find_sources(self, pattern):
-        return self.root.rglob(pattern)  # pragma: no-cover
+        return self.root.rglob(pattern)  # pragma: no cover
 
     def import_tracks(self, sources: Iterable) -> None:
         for path in sources:

@@ -11,7 +11,7 @@ from groove.helper import PlaylistDatabaseHelper
 server = bottle.Bottle()
 
 
-def start(host: str, port: int, debug: bool) -> None:
+def start(host: str, port: int, debug: bool) -> None:  # pragma: no cover
     """
     Start the Bottle app.
     """
