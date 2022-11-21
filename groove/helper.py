@@ -25,7 +25,7 @@ class PlaylistDatabaseHelper:
         """
         playlist = {}
 
-        query = db.playlist.select(db.playlist.c.slug==bindparam('slug'))
+        query = db.playlist.select(db.playlist.c.slug == bindparam('slug'))
         logging.debug(f"playlist: '{slug}' requested. Query: {query}")
         results = self.conn.execute(str(query), {'slug': slug}).fetchone()
         if not results:

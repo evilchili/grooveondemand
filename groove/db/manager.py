@@ -40,4 +40,4 @@ class DatabaseManager:
             self.session.close()
 
 
-database_manager = DatabaseManager()
+database_manager = DatabaseManager
