@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -6,7 +7,7 @@ from bottle import HTTPResponse
 from bottle.ext import sqlite
 
 from groove.auth import is_authenticated
-from groove.helper import PlaylistDatabaseHelper
+from groove.playlist import Playlist
 
 server = bottle.Bottle()
 
@@ -44,8 +45,9 @@ def get_playlist(slug, db):
     Retrieve a playlist and its entries by a slug.
     """
     logging.debug(f"Looking up playlist: {slug}...")
-    pldb = PlaylistDatabaseHelper(connection=db)
-    playlist = pldb.playlist(slug)
-    if not playlist:
+    playlist = Playlist(slug=slug, conn=db)
+    if not playlist.exists:
         return HTTPResponse(status=404, body="Not found")
-    return pldb.json_response(playlist)
+    response = json.dumps(playlist.as_dict)
+    logging.debug(response)
+    return HTTPResponse(status=200, content_type='application/json', body=response)
