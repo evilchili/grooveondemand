@@ -11,9 +11,16 @@ class Playlist:
     """
     CRUD operations and convenience methods for playlists.
     """
-    def __init__(self, slug: str, session: Session, create_if_not_exists: bool = False):
+    def __init__(self,
+                 slug: str,
+                 session: Session,
+                 name: str = '',
+                 description: str = '',
+                 create_if_not_exists: bool = False):
         self._session = session
         self._slug = slug
+        self._name = name
+        self._description = description
         self._record = None
         self._entries = None
         self._create_if_not_exists = create_if_not_exists
@@ -44,7 +51,7 @@ class Playlist:
                 logging.debug(f"Retrieved playlist {self._record.id}")
             except NoResultFound:
                 pass
-            if self._create_if_not_exists:
+            if not self._record and self._create_if_not_exists:
                 self._record = self._create()
                 if not self._record:  # pragma: no cover
                     raise RuntimeError(f"Tried to create a playlist but couldn't read it back using slug {self.slug}")
@@ -56,7 +63,7 @@ class Playlist:
         Cache the list of entries on this playlist and return it.
         """
         if not self._entries and self.record:
-            self._entries = self.session.query(
+            query = self.session.query(
                 db.entry,
                 db.track
             ).filter(
@@ -65,7 +72,8 @@ class Playlist:
                 db.entry.c.playlist_id == db.playlist.c.id
             ).filter(
                 db.entry.c.track_id == db.track.c.id
-            ).all()
+            )
+            self._entries = db.windowed_query(query, db.entry.c.track_id, 1000)
         return self._entries
 
     @property
@@ -90,6 +98,7 @@ class Playlist:
         Returns:
             int: The number of tracks added.
         """
+        logging.debug(f"Attempting to add tracks matching: {paths}")
         try:
             return self._create_entries(self._get_tracks_by_path(paths))
         except NoResultFound:
@@ -144,14 +153,24 @@ class Playlist:
             ]
         )
         self.session.commit()
+        self._entries = None
         return len(tracks)
 
     def _create(self) -> Row:
         """
         Insert a new playlist record into the database.
         """
-        stmt = db.playlist.insert({'slug': self.slug})
+        stmt = db.playlist.insert({'slug': self.slug, 'name': self._name, 'description': self._description})
         results = self.session.execute(stmt)
         self.session.commit()
         logging.debug(f"Created new playlist {results.inserted_primary_key[0]} with slug {self.slug}")
         return self.session.query(db.playlist).filter(db.playlist.c.id == results.inserted_primary_key[0]).one()
+
+    @classmethod
+    def from_row(cls, row, session):
+        pl = Playlist(slug=row.slug, session=session)
+        pl._record = row
+        return pl
+
+    def __repr__(self):
+        return str(self.as_dict)

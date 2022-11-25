@@ -4,9 +4,11 @@ import os
 
 import bottle
 from bottle import HTTPResponse
-from bottle.ext import sqlite
+from bottle.ext import sqlalchemy
 
 from groove.auth import is_authenticated
+from groove.db.manager import database_manager
+from groove.db import metadata
 from groove.playlist import Playlist
 
 server = bottle.Bottle()
@@ -17,15 +19,23 @@ def start(host: str, port: int, debug: bool) -> None:  # pragma: no cover
     Start the Bottle app.
     """
     logging.debug(f"Configuring sqllite using {os.environ.get('DATABASE_PATH')}")
-    server.install(sqlite.Plugin(dbfile=os.environ.get('DATABASE_PATH')))
-    logging.debug(f"Configuring webserver with host={host}, port={port}, debug={debug}")
-    server.run(
-        host=os.getenv('HOST', host),
-        port=os.getenv('PORT', port),
-        debug=debug,
-        server='paste',
-        quiet=True
-    )
+
+    with database_manager() as manager:
+        server.install(sqlalchemy.Plugin(
+            manager.engine,
+            metadata,
+            keyword='db',
+            create=True,
+            commit=True,
+        ))
+        logging.debug(f"Configuring webserver with host={host}, port={port}, debug={debug}")
+        server.run(
+            host=os.getenv('HOST', host),
+            port=os.getenv('PORT', port),
+            debug=debug,
+            server='paste',
+            quiet=True
+        )
 
 
 @server.route('/')
