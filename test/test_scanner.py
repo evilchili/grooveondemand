@@ -1,4 +1,5 @@
 import pytest
+import os
 from pathlib import Path
 from unittest.mock import MagicMock
 from sqlalchemy import func
@@ -47,3 +48,9 @@ def test_scanner(monkeypatch, in_memory_db, media):
 
     # verify idempotency
     assert test_scanner.scan() == 0
+
+
+def test_scanner_no_media_root(in_memory_db):
+    del os.environ['MEDIA_ROOT']
+    with pytest.raises(SystemExit):
+        assert scanner.media_scanner(root=None, db=in_memory_db)

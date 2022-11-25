@@ -38,7 +38,8 @@ def db(in_memory_db):
     in_memory_db.execute(query, [
         {'id': 1, 'name': 'playlist one', 'description': 'the first one', 'slug': 'playlist-one'},
         {'id': 2, 'name': 'playlist two', 'description': 'the second one', 'slug': 'playlist-two'},
-        {'id': 3, 'name': 'playlist three', 'description': 'the threerd one', 'slug': 'playlist-three'}
+        {'id': 3, 'name': 'playlist three', 'description': 'the threerd one', 'slug': 'playlist-three'},
+        {'id': 4, 'name': 'empty playlist', 'description': 'no tracks', 'slug': 'empty-playlist'}
     ])
 
     # populate the playlists
