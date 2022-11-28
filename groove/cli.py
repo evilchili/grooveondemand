@@ -10,11 +10,11 @@ from rich import print
 import rich.table
 
 from groove import webserver
+from groove.shell import start_shell
 from groove.playlist import Playlist
 from groove import db
 from groove.db.manager import database_manager
 from groove.db.scanner import media_scanner
-
 
 playlist_app = typer.Typer()
 app = typer.Typer()
@@ -150,7 +150,13 @@ def scan(
     with database_manager() as manager:
         scanner = media_scanner(root=root, db=manager.session)
         count = scanner.scan()
-        logging.info(f"Imported {count} new tracks from {root}.")
+        logging.info(f"Imported {count} new tracks.")
+
+
+@app.command()
+def shell():
+    initialize()
+    start_shell()
 
 
 @app.command()

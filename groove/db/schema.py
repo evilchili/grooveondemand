@@ -8,6 +8,8 @@ track = Table(
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("relpath", UnicodeText, index=True, unique=True),
+    Column("artist", UnicodeText),
+    Column("title", UnicodeText),
 )
 
 playlist = Table(

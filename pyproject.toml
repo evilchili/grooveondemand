@@ -18,6 +18,8 @@ SQLAlchemy = "^1.4.44"
 python-slugify = "^7.0.0"
 rich = "^12.6.0"
 bottle-sqlalchemy = "^0.4.3"
+music-tag = "^0.4.3"
+prompt-toolkit = "^3.0.33"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2.0"

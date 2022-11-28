@@ -18,3 +18,4 @@ def windowed_query(query, column, window_size):
         last_id = chunk[-1][-1]
         for row in chunk:
             yield row
+

@@ -1,6 +1,9 @@
+import asyncio
 import logging
 import os
 import sys
+
+import music_tag
 
 from pathlib import Path
 from typing import Callable, Union, Iterable
@@ -39,11 +42,23 @@ class MediaScanner:
         return self.root.rglob(pattern)  # pragma: no cover
 
     def import_tracks(self, sources: Iterable) -> None:
-        for path in sources:
-            relpath = str(path.relative_to(self.root))
-            stmt = groove.db.track.insert({'relpath': relpath}).prefix_with('OR IGNORE')
-            self.db.execute(stmt)
+        async def _do_import():
+            logging.debug("Scanning filesystem (this may take a minute)...")
+            for path in sources:
+                asyncio.create_task(self._import_one_track(path))
+        asyncio.run(_do_import())
         self.db.commit()
+
+    async def _import_one_track(self, path):
+        tags = music_tag.load_file(path)
+        relpath = str(path.relative_to(self.root))
+        stmt = groove.db.track.insert({
+            'relpath': relpath,
+            'artist': str(tags.resolve('album_artist')),
+            'title': str(tags['title']),
+        }).prefix_with('OR IGNORE')
+        logging.debug(f"{tags['artist']} - {tags['title']}")
+        self.db.execute(stmt)
 
     def scan(self) -> int:
         """
