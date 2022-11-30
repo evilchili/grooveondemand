@@ -10,7 +10,7 @@ from rich import print
 import rich.table
 
 from groove import webserver
-from groove.shell import start_shell
+from groove.shell import interactive_shell
 from groove.playlist import Playlist
 from groove import db
 from groove.db.manager import database_manager
@@ -156,7 +156,7 @@ def scan(
 @app.command()
 def shell():
     initialize()
-    start_shell()
+    interactive_shell.start()
 
 
 @app.command()

@@ -1,9 +1,28 @@
 import os
 
+from prompt_toolkit.completion import Completion, FuzzyCompleter
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from . import metadata
+
+
+class FuzzyTableCompleter(FuzzyCompleter):
+
+    def __init__(self, table, column, formatter, session):
+        self._table = table
+        self._column = column
+        self._formatter = formatter
+        self._session = session
+
+    def get_completions(self, document, complete_event):
+        line = document.current_line_before_cursor
+        query = self._session.query(self._table).filter(self._column.ilike(f"%{line}%"))
+        for row in query.all():
+            yield Completion(
+                self._formatter(row),
+                start_position=-len(line)
+            )
 
 
 class DatabaseManager:
@@ -18,7 +37,7 @@ class DatabaseManager:
     @property
     def engine(self):
         if not self._engine:
-            self._engine = create_engine(f"sqlite:///{os.environ.get('DATABASE_PATH')}", future=True)
+            self._engine = create_engine(f"sqlite:///{os.environ.get('DATABASE_PATH')}?check_same_thread=False", future=True)
         return self._engine
 
     @property
@@ -30,6 +49,9 @@ class DatabaseManager:
 
     def import_from_filesystem(self):
         pass
+
+    def fuzzy_table_completer(self, table, column, formatter):
+        return FuzzyTableCompleter(table, column, formatter, session=self.session)
 
     def __enter__(self):
         metadata.create_all(bind=self.engine)

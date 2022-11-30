@@ -4,7 +4,9 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy.engine.row import Row
 from sqlalchemy.exc import NoResultFound, MultipleResultsFound
 from typing import Union, List
+
 import logging
+import os
 
 
 class Playlist:
@@ -33,6 +35,14 @@ class Playlist:
         return self.record is not None
 
     @property
+    def summary(self):
+        return ' :: '.join([
+            f"[ {self.record.id} ]",
+            self.record.name,
+            f"http://{os.environ['HOST']}/{self.slug}",
+        ])
+
+    @property
     def slug(self) -> Union[str, None]:
         return self._slug
 
@@ -50,6 +60,7 @@ class Playlist:
                 self._record = self.session.query(db.playlist).filter(db.playlist.c.slug == self.slug).one()
                 logging.debug(f"Retrieved playlist {self._record.id}")
             except NoResultFound:
+                logging.debug(f"Could not find a playlist with slug {self.slug}.")
                 pass
             if not self._record and self._create_if_not_exists:
                 self._record = self._create()
@@ -62,7 +73,7 @@ class Playlist:
         """
         Cache the list of entries on this playlist and return it.
         """
-        if not self._entries and self.record:
+        if self.record and not self._entries:
             query = self.session.query(
                 db.entry,
                 db.track
@@ -72,8 +83,11 @@ class Playlist:
                 db.entry.c.playlist_id == db.playlist.c.id
             ).filter(
                 db.entry.c.track_id == db.track.c.id
+            ).order_by(
+                db.entry.c.track
             )
-            self._entries = db.windowed_query(query, db.entry.c.track_id, 1000)
+            # self._entries = list(db.windowed_query(query, db.entry.c.track_id, 1000))
+            self._entries = query.all()
         return self._entries
 
     @property
@@ -86,6 +100,13 @@ class Playlist:
         playlist = dict(self.record)
         playlist['entries'] = [dict(entry) for entry in self.entries]
         return playlist
+
+    @property
+    def as_string(self) -> str:
+        text = f"{self.summary}\n"
+        for entry in self.entries:
+            text += f"  - {entry.track}  {entry.artist} - {entry.title}\n"
+        return text
 
     def add(self, paths: List[str]) -> int:
         """
@@ -100,7 +121,7 @@ class Playlist:
         """
         logging.debug(f"Attempting to add tracks matching: {paths}")
         try:
-            return self._create_entries(self._get_tracks_by_path(paths))
+            return self.create_entries(self._get_tracks_by_path(paths))
         except NoResultFound:
             logging.error("One or more of the specified paths do not match any tracks in the database.")
             return 0
@@ -133,7 +154,7 @@ class Playlist:
         """
         return [self.session.query(db.track).filter(db.track.c.relpath.ilike(f"%{path}%")).one() for path in paths]
 
-    def _create_entries(self, tracks: List[Row]) -> int:
+    def create_entries(self, tracks: List[Row]) -> int:
         """
         Append a list of tracks to a playlist by populating the entries table with records referencing the playlist and
         the specified tracks.
@@ -173,4 +194,4 @@ class Playlist:
         return pl
 
     def __repr__(self):
-        return str(self.as_dict)
+        return self.as_string
