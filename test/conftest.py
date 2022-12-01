@@ -7,14 +7,18 @@ from sqlalchemy.orm import sessionmaker
 
 
 @pytest.fixture(scope='function')
-def in_memory_db():
+def in_memory_engine():
+    return create_engine('sqlite:///:memory:', future=True)
+
+
+@pytest.fixture(scope='function')
+def in_memory_db(in_memory_engine):
     """
     An (empty) in-memory SQLite3 database
     """
-    engine = create_engine('sqlite:///:memory:', future=True)
-    Session = sessionmaker(bind=engine, future=True)
+    Session = sessionmaker(bind=in_memory_engine, future=True)
     session = Session()
-    groove.db.metadata.create_all(bind=engine)
+    groove.db.metadata.create_all(bind=in_memory_engine)
     yield session
     session.close()
 

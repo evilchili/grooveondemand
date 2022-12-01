@@ -23,4 +23,4 @@ class help(BasePrompt):
                 table.add_row(getattr(obj, 'usage', name), obj.__doc__)
             print(table)
         else:
-            print(f"Help for {parts}:")
+            print(f"Help for {' '.join(parts)}:")
