@@ -35,6 +35,16 @@ def test_scanner(monkeypatch, in_memory_db, media):
 
     # replace the filesystem glob with the test fixture generator
     monkeypatch.setattr(scanner.MediaScanner, 'find_sources', MagicMock(return_value=media()))
+
+    def mock_loader(path):
+        return {
+            'artist': 'foo',
+            'title': 'bar',
+        }
+
+    # replace music_tag so it doesn't try to read things
+    monkeypatch.setattr(scanner.MediaScanner, '_get_tags', MagicMock(side_effect=mock_loader))
+
     test_scanner = scanner.media_scanner(root=Path('/test'), db=in_memory_db)
     expected = len(fixture_tracks)
 

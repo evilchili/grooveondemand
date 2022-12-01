@@ -49,14 +49,17 @@ class MediaScanner:
         asyncio.run(_do_import())
         self.db.commit()
 
-    async def _import_one_track(self, path):
+    def _get_tags(self, path):  # pragma: no cover
         tags = music_tag.load_file(path)
-        relpath = str(path.relative_to(self.root))
-        stmt = groove.db.track.insert({
-            'relpath': relpath,
+        return {
             'artist': str(tags.resolve('album_artist')),
             'title': str(tags['title']),
-        }).prefix_with('OR IGNORE')
+        }
+
+    async def _import_one_track(self, path):
+        tags = self._get_tags(path)
+        tags['relpath'] = str(path.relative_to(self.root))
+        stmt = groove.db.track.insert(tags).prefix_with('OR IGNORE')
         logging.debug(f"{tags['artist']} - {tags['title']}")
         self.db.execute(stmt)
 
