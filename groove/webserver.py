@@ -55,7 +55,8 @@ def get_playlist(slug, db):
     Retrieve a playlist and its entries by a slug.
     """
     logging.debug(f"Looking up playlist: {slug}...")
-    playlist = Playlist(slug=slug, session=db)
+    playlist = Playlist(slug=slug, session=db, create_ok=False)
+    print(playlist.record)
     if not playlist.exists:
         return HTTPResponse(status=404, body="Not found")
     response = json.dumps(playlist.as_dict)

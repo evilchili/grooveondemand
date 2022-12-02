@@ -13,7 +13,7 @@ def cmd_prompt(in_memory_engine, db):
 
 
 def response_factory(responses):
-    return MagicMock(side_effect=responses + [''])
+    return MagicMock(side_effect=responses + ([''] * 10))
 
 
 @pytest.mark.parametrize('inputs, expected', [
@@ -58,3 +58,14 @@ def test_help(monkeypatch, capsys, cmd_prompt, inputs, expected):
     output = capsys.readouterr()
     for txt in expected:
         assert txt in output.out
+
+
+@pytest.mark.parametrize('inputs, expected', [
+    ('load A New Playlist', 'a-new-playlist'),
+    ('new playlist', 'new-playlist'),
+    ('load', '')
+])
+def test_load(monkeypatch, caplog, cmd_prompt, inputs, expected):
+    monkeypatch.setattr('groove.shell.base.prompt', response_factory([inputs]))
+    cmd_prompt.start()
+    assert expected in caplog.text

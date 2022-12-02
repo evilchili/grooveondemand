@@ -18,21 +18,27 @@ class Playlist:
                  session: Session,
                  name: str = '',
                  description: str = '',
-                 create_if_not_exists: bool = False):
+                 create_ok=True):
         self._session = session
         self._slug = slug
         self._name = name
         self._description = description
-        self._record = None
         self._entries = None
-        self._create_if_not_exists = create_if_not_exists
+        self._record = None
+        self._create_ok = create_ok
+        self._deleted = False
+
+    @property
+    def deleted(self) -> bool:
+        return self._deleted
 
     @property
     def exists(self) -> bool:
-        """
-        True if the playlist exists in the database.
-        """
-        return self.record is not None
+        if self.deleted:
+            return False
+        if not self._record:
+            return (self._create_ok and self.record)
+        return True
 
     @property
     def summary(self):
@@ -43,11 +49,11 @@ class Playlist:
         ])
 
     @property
-    def slug(self) -> Union[str, None]:
+    def slug(self) -> str:
         return self._slug
 
     @property
-    def session(self) -> Union[Session, None]:
+    def session(self) -> Session:
         return self._session
 
     @property
@@ -56,16 +62,7 @@ class Playlist:
         Cache the playlist row from the database and return it. Optionally create it if it doesn't exist.
         """
         if not self._record:
-            try:
-                self._record = self.session.query(db.playlist).filter(db.playlist.c.slug == self.slug).one()
-                logging.debug(f"Retrieved playlist {self._record.id}")
-            except NoResultFound:
-                logging.debug(f"Could not find a playlist with slug {self.slug}.")
-                pass
-            if not self._record and self._create_if_not_exists:
-                self._record = self._create()
-                if not self._record:  # pragma: no cover
-                    raise RuntimeError(f"Tried to create a playlist but couldn't read it back using slug {self.slug}")
+            self._record = self.get_or_create()
         return self._record
 
     @property
@@ -86,7 +83,6 @@ class Playlist:
             ).order_by(
                 db.entry.c.track
             )
-            # self._entries = list(db.windowed_query(query, db.entry.c.track_id, 1000))
             self._entries = query.all()
         return self._entries
 
@@ -95,7 +91,7 @@ class Playlist:
         """
         Return a dictionary of the playlist and its entries.
         """
-        if not self.record:
+        if not self.exists:
             return {}
         playlist = dict(self.record)
         playlist['entries'] = [dict(entry) for entry in self.entries]
@@ -103,10 +99,19 @@ class Playlist:
 
     @property
     def as_string(self) -> str:
+        if not self.exists:
+            return ''
         text = f"{self.summary}\n"
         for entry in self.entries:
             text += f"  - {entry.track}  {entry.artist} - {entry.title}\n"
         return text
+
+    def _get_tracks_by_path(self, paths: List[str]) -> List:
+        """
+        Retrieve tracks from the database that match the specified path fragments. The exceptions NoResultFound and
+        MultipleResultsFound are expected in the case of no matches and multiple matches, respectively.
+        """
+        return [self.session.query(db.track).filter(db.track.c.relpath.ilike(f"%{path}%")).one() for path in paths]
 
     def add(self, paths: List[str]) -> int:
         """
@@ -145,14 +150,26 @@ class Playlist:
         self.session.commit()
         self._record = None
         self._entries = None
+        self._deleted = True
         return plid
 
-    def _get_tracks_by_path(self, paths: List[str]) -> List:
-        """
-        Retrieve tracks from the database that match the specified path fragments. The exceptions NoResultFound and
-        MultipleResultsFound are expected in the case of no matches and multiple matches, respectively.
-        """
-        return [self.session.query(db.track).filter(db.track.c.relpath.ilike(f"%{path}%")).one() for path in paths]
+    def get_or_create(self, create_ok: bool = False) -> Row:
+        try:
+            return self.session.query(db.playlist).filter(db.playlist.c.slug == self.slug).one()
+        except NoResultFound:
+            logging.debug(f"Could not find a playlist with slug {self.slug}.")
+        if self.deleted:
+            raise RuntimeError("Object has been deleted.")
+        if self._create_ok or create_ok:
+            return self.save()
+
+    def save(self) -> Row:
+        keys = {'slug': self.slug, 'name': self._name, 'description': self._description}
+        stmt = db.playlist.update(keys) if self._record else db.playlist.insert(keys)
+        results = self.session.execute(stmt)
+        self.session.commit()
+        logging.debug(f"Saved playlist {results.inserted_primary_key[0]} with slug {self.slug}")
+        return self.session.query(db.playlist).filter(db.playlist.c.id == results.inserted_primary_key[0]).one()
 
     def create_entries(self, tracks: List[Row]) -> int:
         """
@@ -165,7 +182,10 @@ class Playlist:
         Returns:
             int: The number of tracks added.
         """
-        maxtrack = self.session.query(func.max(db.entry.c.track)).filter_by(playlist_id=self.record.id).one()[0] or 0
+        maxtrack = self.session.query(func.max(db.entry.c.track)).filter_by(
+            playlist_id=self.record.id
+        ).one()[0] or 0
+
         self.session.execute(
             db.entry.insert(),
             [
@@ -176,16 +196,6 @@ class Playlist:
         self.session.commit()
         self._entries = None
         return len(tracks)
-
-    def _create(self) -> Row:
-        """
-        Insert a new playlist record into the database.
-        """
-        stmt = db.playlist.insert({'slug': self.slug, 'name': self._name, 'description': self._description})
-        results = self.session.execute(stmt)
-        self.session.commit()
-        logging.debug(f"Created new playlist {results.inserted_primary_key[0]} with slug {self.slug}")
-        return self.session.query(db.playlist).filter(db.playlist.c.id == results.inserted_primary_key[0]).one()
 
     @classmethod
     def from_row(cls, row, session):

@@ -4,4 +4,4 @@ from .help import help
 from .browse import browse
 from .stats import stats
 from .playlist import _playlist
-from .create import create
+from .load import load

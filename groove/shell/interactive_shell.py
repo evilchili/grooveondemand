@@ -1,4 +1,3 @@
-from rich import print
 from slugify import slugify
 
 from groove.db.manager import database_manager
@@ -36,7 +35,7 @@ class CommandPrompt(BasePrompt):
 
     def default_completer(self, document, complete_event):
         def _formatter(row):
-            self._playlist = Playlist.from_row(row, self.manager)
+            self._playlist = Playlist.from_row(row, self.manager.session)
             return self.playlist.record.name
         return self.manager.fuzzy_table_completer(
             db.playlist,
@@ -48,18 +47,17 @@ class CommandPrompt(BasePrompt):
         name = cmd + ' ' + ' '.join(parts)
         if cmd in self.commands:
             self.commands[cmd].start(name)
-        elif not parts:
-            print(f"Command not understood: {cmd}")
         else:
             slug = slugify(name)
             self._playlist = Playlist(
                 slug=slug,
                 name=name,
                 session=self.manager.session,
-                create_if_not_exists=False
+                create_ok=True
             )
-            self.commands['_playlist'].start()
-            self._playlist = None
+            res = self.commands['_playlist'].start()
+            if res is False:
+                return res
         return True
 
 
