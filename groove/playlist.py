@@ -35,9 +35,12 @@ class Playlist:
     @property
     def exists(self) -> bool:
         if self.deleted:
+            logging.debug("Playlist has been deleted.")
             return False
         if not self._record:
-            return (self._create_ok and self.record)
+            if self._create_ok:
+                return True and self.record
+            return False
         return True
 
     @property
@@ -162,6 +165,10 @@ class Playlist:
             raise RuntimeError("Object has been deleted.")
         if self._create_ok or create_ok:
             return self.save()
+
+    def load(self):
+        self.get_or_create(create_ok=False)
+        return self
 
     def save(self) -> Row:
         keys = {'slug': self.slug, 'name': self._name, 'description': self._description}

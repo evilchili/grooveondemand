@@ -9,12 +9,12 @@ from slugify import slugify
 from rich import print
 import rich.table
 
-from groove import webserver
 from groove.shell import interactive_shell
 from groove.playlist import Playlist
 from groove import db
 from groove.db.manager import database_manager
 from groove.db.scanner import media_scanner
+from groove.webserver import webserver
 
 playlist_app = typer.Typer()
 app = typer.Typer()
