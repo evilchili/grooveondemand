@@ -1,8 +1,6 @@
 import asyncio
 import logging
 import os
-import sys
-
 import music_tag
 
 from pathlib import Path
@@ -10,20 +8,17 @@ from typing import Callable, Union, Iterable
 from sqlalchemy import func
 
 import groove.db
+import groove.path
 
 
 class MediaScanner:
     """
     Scan a directory structure containing audio files and import them into the database.
     """
-    def __init__(self, root: Path, db: Callable, glob: Union[str, None] = None) -> None:
+    def __init__(self, root: Union[Path, None], db: Callable, glob: Union[str, None] = None) -> None:
         self._db = db
         self._glob = tuple((glob or os.environ.get('MEDIA_GLOB')).split(','))
-        try:
-            self._root = root or Path(os.environ.get('MEDIA_ROOT'))
-        except TypeError:
-            logging.error("Could not find media root. Do you need to define MEDIA_ROOT in your environment?")
-            sys.exit(1)
+        self._root = root or groove.path.media_root()
         logging.debug(f"Configured media scanner for root: {self._root}")
 
     @property

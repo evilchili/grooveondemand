@@ -1,7 +1,6 @@
 import logging
 import json
 import os
-from pathlib import Path
 
 import bottle
 from bottle import HTTPResponse, template, static_file
@@ -11,9 +10,7 @@ import groove.db
 from groove.auth import is_authenticated
 from groove.db.manager import database_manager
 from groove.playlist import Playlist
-from groove.webserver import requests
-
-#  from groove.exceptions import APIHandlingException
+from groove.webserver import requests, themes
 
 server = bottle.Bottle()
 
@@ -42,6 +39,16 @@ def start(host: str, port: int, debug: bool) -> None:  # pragma: no cover
         )
 
 
+def serve(template_name, theme=None, **template_args):
+    theme = themes.load_theme(theme)
+    return HTTPResponse(status=200, body=template(
+        str(theme.path / groove.path.theme_template(template_name)),
+        url=requests.url(),
+        theme=theme,
+        **template_args
+    ))
+
+
 @server.route('/')
 def index():
     return "Groovy."
@@ -55,7 +62,18 @@ def build():
 
 @server.route('/static/<filepath:path>')
 def server_static(filepath):
-    return static_file(filepath, root='static')
+    theme = themes.load_theme()
+    asset = theme.path / groove.path.theme_static(filepath)
+    if asset.exists():
+        root = asset.parent
+    else:
+        root = groove.path.static_root()
+        asset = groove.path.static(filepath)
+    if asset.is_dir():
+        logging.warning("Asset {asset} is a directory; returning 404.")
+        return HTTPResponse(status=404, body="Not found.")
+    logging.debug(f"Serving asset {asset.name} from {root}")
+    return static_file(asset.name, root=root)
 
 
 @bottle.auth_basic(is_authenticated)
@@ -79,8 +97,11 @@ def serve_track(request, track_id, db):
         groove.db.track.c.id == track_id
     ).one()
 
-    path = Path(os.environ['MEDIA_ROOT']) / Path(track['relpath'])
-    return static_file(path.name, root=path.parent)
+    path = groove.path.media(track['relpath'])
+    if path.exists:
+        return static_file(path.name, root=path.parent)
+    else:
+        return HTTPResponse(status=404, body="Not found")
 
 
 @server.route('/playlist/<slug>')
@@ -97,15 +118,8 @@ def serve_playlist(slug, db):
     logging.debug(playlist.as_dict['entries'])
 
     pl = playlist.as_dict
-
     for entry in pl['entries']:
         sig = requests.encode([str(entry['track_id'])], uri='/track')
         entry['url'] = f"/track/{sig}/{entry['track_id']}"
 
-    template_path = Path(os.environ['TEMPLATE_PATH']) / Path('playlist.tpl')
-    body = template(
-        str(template_path),
-        url=requests.url(),
-        playlist=pl
-    )
-    return HTTPResponse(status=200, body=body)
+    return serve('playlist', playlist=pl)
