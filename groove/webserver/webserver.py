@@ -13,7 +13,7 @@ from groove.db.manager import database_manager
 from groove.playlist import Playlist
 from groove.webserver import requests
 
-from groove.exceptions import APIHandlingException
+#  from groove.exceptions import APIHandlingException
 
 server = bottle.Bottle()
 
@@ -51,6 +51,11 @@ def index():
 @bottle.auth_basic(is_authenticated)
 def build():
     return "Authenticated. Groovy."
+
+
+@server.route('/static/<filepath:path>')
+def server_static(filepath):
+    return static_file(filepath, root='static')
 
 
 @bottle.auth_basic(is_authenticated)
@@ -91,10 +96,16 @@ def serve_playlist(slug, db):
     logging.debug(f"Loaded {playlist.record}")
     logging.debug(playlist.as_dict['entries'])
 
-    args = [
-        (requests.encode([str(entry['track_id'])], uri='/track'), entry['track_id'])
-        for entry in playlist.as_dict['entries']
-    ]
+    pl = playlist.as_dict
+
+    for entry in pl['entries']:
+        sig = requests.encode([str(entry['track_id'])], uri='/track')
+        entry['url'] = f"/track/{sig}/{entry['track_id']}"
 
     template_path = Path(os.environ['TEMPLATE_PATH']) / Path('playlist.tpl')
-    return template(str(template_path), url=requests.url(), playlist=playlist.as_dict, args=args)
+    body = template(
+        str(template_path),
+        url=requests.url(),
+        playlist=pl
+    )
+    return HTTPResponse(status=200, body=body)
