@@ -4,7 +4,9 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from sqlalchemy import func
 
+import groove.exceptions
 from groove.db import scanner, track
+
 
 fixture_tracks = [
     "/test/Spookey Ruben/Modes of Transportation, Volume 1/Spookey Ruben - Modes of Transportation, Volume 1 - 01 Terra Magnifica.flac",
@@ -62,5 +64,5 @@ def test_scanner(monkeypatch, in_memory_db, media):
 
 def test_scanner_no_media_root(in_memory_db):
     del os.environ['MEDIA_ROOT']
-    with pytest.raises(SystemExit):
+    with pytest.raises(groove.exceptions.ConfigurationError):
         assert scanner.media_scanner(root=None, db=in_memory_db)

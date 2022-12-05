@@ -1,9 +1,27 @@
 import pytest
+import os
+
+from pathlib import Path
+from dotenv import load_dotenv
 
 import groove.db
 
 from sqlalchemy import create_engine, insert
 from sqlalchemy.orm import sessionmaker
+
+
+@pytest.fixture(autouse=True, scope='function')
+def env():
+    root = Path(__file__).parent / Path('fixtures')
+    load_dotenv(Path('test/fixtures/env'))
+    os.environ['GROOVE_ON_DEMAND_ROOT'] = str(root)
+    os.environ['MEDIA_ROOT'] = str(root / Path('media'))
+    return os.environ
+
+
+@pytest.fixture(scope='function')
+def auth():
+    return (os.environ.get('USERNAME'), os.environ.get('PASSWORD'))
 
 
 @pytest.fixture(scope='function')
@@ -32,9 +50,9 @@ def db(in_memory_db):
     # create tracks
     query = insert(groove.db.track)
     in_memory_db.execute(query, [
-        {'id': 1, 'relpath': '/UNKLE/Psyence Fiction/01 Guns Blazing (Drums of Death, Part 1).flac'},
-        {'id': 2, 'relpath': '/UNKLE/Psyence Fiction/02 UNKLE (Main Title Theme).flac'},
-        {'id': 3, 'relpath': '/UNKLE/Psyence Fiction/03 Bloodstain.flac'}
+        {'id': 1, 'relpath': 'UNKLE/Psyence Fiction/01 Guns Blazing (Drums of Death, Part 1).flac'},
+        {'id': 2, 'relpath': 'UNKLE/Psyence Fiction/02 UNKLE (Main Title Theme).flac'},
+        {'id': 3, 'relpath': 'UNKLE/Psyence Fiction/03 Bloodstain.flac'}
     ])
 
     # create playlists

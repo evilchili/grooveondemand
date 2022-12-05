@@ -5,6 +5,7 @@ import os
 import bottle
 from bottle import HTTPResponse, template, static_file
 from bottle.ext import sqlalchemy
+from sqlalchemy.exc import NoResultFound, MultipleResultsFound
 
 import groove.db
 from groove.auth import is_authenticated
@@ -54,54 +55,32 @@ def index():
     return "Groovy."
 
 
-@server.route('/build')
-@bottle.auth_basic(is_authenticated)
-def build():
-    return "Authenticated. Groovy."
-
-
 @server.route('/static/<filepath:path>')
-def server_static(filepath):
+def serve_static(filepath):
     theme = themes.load_theme()
-    asset = theme.path / groove.path.theme_static(filepath)
-    if asset.exists():
-        root = asset.parent
-    else:
-        root = groove.path.static_root()
-        asset = groove.path.static(filepath)
-    if asset.is_dir():
-        logging.warning("Asset {asset} is a directory; returning 404.")
-        return HTTPResponse(status=404, body="Not found.")
-    logging.debug(f"Serving asset {asset.name} from {root}")
-    return static_file(asset.name, root=root)
-
-
-@bottle.auth_basic(is_authenticated)
-@server.route('/build/search/playlist')
-def search_playlist(slug, db):
-    playlist = Playlist(slug=slug, session=db, create_ok=False)
-    response = json.dumps(playlist.as_dict)
-    logging.debug(response)
-    return HTTPResponse(status=200, content_type='application/json', body=response)
+    path = groove.path.static(filepath, theme=theme)
+    logging.debug(f"Serving asset {path.name} from {path.parent}")
+    return static_file(path.name, root=path.parent)
 
 
 @server.route('/track/<request>/<track_id>')
 def serve_track(request, track_id, db):
 
     expected = requests.encode([track_id], '/track')
-    if not requests.verify(request, expected):
+    if not requests.verify(request, expected):  # pragma: no cover
         return HTTPResponse(status=404, body="Not found")
 
-    track_id = int(track_id)
-    track = db.query(groove.db.track).filter(
-        groove.db.track.c.id == track_id
-    ).one()
+    try:
+        track_id = int(track_id)
+        track = db.query(groove.db.track).filter(
+            groove.db.track.c.id == track_id
+        ).one()
+    except (NoResultFound, MultipleResultsFound):
+        return HTTPResponse(status=404, body="Not found")
 
     path = groove.path.media(track['relpath'])
-    if path.exists:
-        return static_file(path.name, root=path.parent)
-    else:
-        return HTTPResponse(status=404, body="Not found")
+    logging.debug(f"Service track {path.name} from {path.parent}")
+    return static_file(path.name, root=path.parent)
 
 
 @server.route('/playlist/<slug>')
@@ -123,3 +102,21 @@ def serve_playlist(slug, db):
         entry['url'] = f"/track/{sig}/{entry['track_id']}"
 
     return serve('playlist', playlist=pl)
+
+
+@server.route('/build')
+@bottle.auth_basic(is_authenticated)
+def build():
+    return "Authenticated. Groovy."
+
+
+@bottle.auth_basic(is_authenticated)
+@server.route('/build/search/playlist/<slug>')
+def search_playlist(slug, db):
+    playlist = Playlist(slug=slug, session=db, create_ok=False).load()
+    if not playlist.record:
+        logging.debug(f"Playist {slug} doesn't exist.")
+        body = {}
+    else:
+        body = json.dumps(playlist.as_dict)
+    return HTTPResponse(status=200, content_type='application/json', body=body)

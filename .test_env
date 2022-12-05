@@ -1,6 +1,0 @@
-HOST=127.0.0.1
-DEBUG=1
-USERNAME=test_username
-PASSWORD=test_password
-MEDIA_ROOT=/test
-MEDIA_GLOB=*.flac,*.mp3
