@@ -3,7 +3,7 @@ import os
 import typer
 
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional
 from dotenv import load_dotenv
 from slugify import slugify
 from rich import print
@@ -87,49 +87,6 @@ def get(
     with database_manager() as manager:
         pl = Playlist(slug=slug, session=manager.session)
         print(pl.as_dict)
-
-
-@playlist_app.command()
-def add(
-    name: str = typer.Argument(
-        ...,
-        help="The name of the playlist to create."
-    ),
-    description: str = typer.Option(
-        None,
-        help="The description of the playlist."
-    ),
-    tracks: List[str] = typer.Option(
-        None,
-        help="A list of tracks to add to the playlist."
-    ),
-    exists_ok: bool = typer.Option(
-        True,
-        help="If True, it is okay if the playlist already exists."
-    ),
-    multiples_ok: bool = typer.Option(
-        False,
-        help="If True, the same track can be added to the playlist multiple times."
-    )
-):
-    """
-    Create a new playlist with the specified name, unless it already exists.
-    """
-    initialize()
-    with database_manager() as manager:
-        pl = Playlist(
-            slug=slugify(name),
-            session=manager.session,
-            name=name,
-            description=description,
-            create_if_not_exists=True)
-        if pl.exists:
-            if not exists_ok:
-                raise RuntimeError(f"Playlist with slug {pl.slug} already exists!")
-        logging.debug(pl.as_dict)
-        if tracks:
-            pl.add(tracks)
-    print(pl.as_dict)
 
 
 @app.command()
