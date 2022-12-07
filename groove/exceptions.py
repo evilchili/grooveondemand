@@ -21,3 +21,9 @@ class ConfigurationError(Exception):
     """
     An error was discovered with the Groove on Demand configuration.
     """
+
+
+class PlaylistImportError(Exception):
+    """
+    An error was discovered in a playlist template.
+    """

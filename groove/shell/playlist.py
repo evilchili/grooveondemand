@@ -30,6 +30,7 @@ class _playlist(BasePrompt):
                 'show':  self.show,
                 'delete': self.delete,
                 'add': self.add,
+                'edit': self.edit,
             }
         return self._commands
 
@@ -45,11 +46,15 @@ class _playlist(BasePrompt):
         print(self.parent.playlist)
         return True
 
+    def edit(self, parts):
+        self.parent.playlist.edit()
+        return True
+
     def add(self, parts):
         print("Add tracks one at a time by title. ENTER to finish.")
         while True:
             text = prompt(
-                '  ? ',
+                '  ?',
                 completer=self.manager.fuzzy_table_completer(
                     db.track,
                     db.track.c.relpath,

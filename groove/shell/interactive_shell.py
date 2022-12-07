@@ -48,9 +48,8 @@ class CommandPrompt(BasePrompt):
         if cmd in self.commands:
             self.commands[cmd].start(name)
         else:
-            slug = slugify(name)
             self._playlist = Playlist(
-                slug=slug,
+                slug=slugify(name),
                 name=name,
                 session=self.manager.session,
                 create_ok=True

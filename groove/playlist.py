@@ -1,12 +1,17 @@
+import logging
+import os
+
+from typing import Union, List
+
 from groove import db
+from groove.editor import PlaylistEditor, EDITOR_TEMPLATE
+from groove.exceptions import PlaylistImportError
+
+from slugify import slugify
 from sqlalchemy import func, delete
 from sqlalchemy.orm.session import Session
 from sqlalchemy.engine.row import Row
 from sqlalchemy.exc import NoResultFound, MultipleResultsFound
-from typing import Union, List
-
-import logging
-import os
 
 
 class Playlist:
@@ -27,6 +32,7 @@ class Playlist:
         self._record = None
         self._create_ok = create_ok
         self._deleted = False
+        self._editor = PlaylistEditor()
 
     @property
     def deleted(self) -> bool:
@@ -42,6 +48,18 @@ class Playlist:
                 return True and self.record
             return False
         return True
+
+    @property
+    def editor(self):
+        return self._editor
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def description(self):
+        return self._description
 
     @property
     def summary(self):
@@ -109,12 +127,34 @@ class Playlist:
             text += f"  - {entry.track}  {entry.artist} - {entry.title}\n"
         return text
 
+    @property
+    def as_yaml(self) -> str:
+        template_vars = self.as_dict
+        template_vars['entries'] = ''
+        for entry in self.entries:
+            template_vars['entries'] += f"  - {entry.artist} - {entry.title}\n"
+        return EDITOR_TEMPLATE.format(**template_vars)
+
     def _get_tracks_by_path(self, paths: List[str]) -> List:
         """
         Retrieve tracks from the database that match the specified path fragments. The exceptions NoResultFound and
         MultipleResultsFound are expected in the case of no matches and multiple matches, respectively.
         """
         return [self.session.query(db.track).filter(db.track.c.relpath.ilike(f"%{path}%")).one() for path in paths]
+
+    def edit(self):
+        edits = self.editor.edit(self)
+        if not edits:
+            return
+        new = Playlist.from_yaml(edits, self.session)
+        if new == self:
+            logging.debug("No changes detected.")
+            return
+        logging.debug(f"Updating {self.slug} with new edits.")
+        self._slug = new.slug
+        self._name = new.name.strip()
+        self._description = new.description.strip()
+        self._record = self.save()
 
     def add(self, paths: List[str]) -> int:
         """
@@ -158,7 +198,7 @@ class Playlist:
 
     def get_or_create(self, create_ok: bool = False) -> Row:
         try:
-            return self.session.query(db.playlist).filter(db.playlist.c.slug == self.slug).one()
+            return self._get()
         except NoResultFound:
             logging.debug(f"Could not find a playlist with slug {self.slug}.")
         if self.deleted:
@@ -166,17 +206,44 @@ class Playlist:
         if self._create_ok or create_ok:
             return self.save()
 
+    def _get(self):
+        return self.session.query(db.playlist).filter(
+            db.playlist.c.slug == self.slug
+        ).one()
+
+    def _insert(self, values):
+        stmt = db.playlist.insert(values)
+        results = self.session.execute(stmt)
+        self.session.commit()
+        logging.debug(f"Saved playlist with slug {self.slug}")
+        return self.session.query(db.playlist).filter(
+            db.playlist.c.id == results.inserted_primary_key[0]
+        ).one()
+
+    def _update(self, values):
+        stmt = db.playlist.update().where(
+            db.playlist.c.id == self._record.id
+        ).values(values)
+        self.session.execute(stmt)
+        self.session.commit()
+        return self.session.query(db.playlist).filter(
+            db.playlist.c.id == self._record.id
+        ).one()
+
+    def save(self) -> Row:
+        values = {
+            'slug': self.slug,
+            'name': self.name,
+            'description': self.description
+        }
+        logging.debug(f"Saving values: {values}")
+        obj = self._update(values) if self._record else self._insert(values)
+        logging.debug(f"Saved playlist {obj.id} with slug {obj.slug}")
+        return obj
+
     def load(self):
         self.get_or_create(create_ok=False)
         return self
-
-    def save(self) -> Row:
-        keys = {'slug': self.slug, 'name': self._name, 'description': self._description}
-        stmt = db.playlist.update(keys) if self._record else db.playlist.insert(keys)
-        results = self.session.execute(stmt)
-        self.session.commit()
-        logging.debug(f"Saved playlist {results.inserted_primary_key[0]} with slug {self.slug}")
-        return self.session.query(db.playlist).filter(db.playlist.c.id == results.inserted_primary_key[0]).one()
 
     def create_entries(self, tracks: List[Row]) -> int:
         """
@@ -209,6 +276,27 @@ class Playlist:
         pl = Playlist(slug=row.slug, session=session)
         pl._record = row
         return pl
+
+    @classmethod
+    def from_yaml(cls, source, session):
+        try:
+            name = list(source.keys())[0].strip()
+            description = (source[name]['description'] or '').strip()
+            return Playlist(
+                slug=slugify(name),
+                name=name,
+                description=description,
+                session=session,
+            )
+        except (IndexError, KeyError):
+            PlaylistImportError("The specified source was not a valid playlist.")
+
+    def __eq__(self, obj):
+        for key in ('slug', 'name', 'description'):
+            if getattr(obj, key) != getattr(self, key):
+                logging.debug(f"{key}: {getattr(obj, key)} != {getattr(self, key)}")
+                return False
+        return True
 
     def __repr__(self):
         return self.as_string
