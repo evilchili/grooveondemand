@@ -17,7 +17,15 @@ EDITOR_TEMPLATE = """
 # Groove On Demand Playlist Editor
 #
 # This file is in YAML format. Blank lines and lines beginning with # are
-# ignored. Here's a complete example:
+# ignored, and the following structure is expected:
+#
+# PLAYLIST_TITLE:
+#  description: STRING_DESCRIPTION
+#  entries:
+#    - TRACK_ARTIST - TRACK_TITLE
+#    ...
+#
+# Here's a complete example, with a multi-line description:
 #
 #   My Awesome Jams, Vol. 2:
 #     description: |
@@ -26,9 +34,15 @@ EDITOR_TEMPLATE = """
 #
 #       yo.
 #     entries:
-#       - Beastie Boys - Help Me, Ronda
-#       - Bob and Doug McKenzie - Messiah (Hallelujah Eh)
+#       - Beastie Boys: Help Me, Rhonda
+#       - Bob and Doug McKenzie: Messiah (Hallelujah Eh)
 #
+# Tracks can be reordered or removed. You can also add a track, if the artist/title
+# combination exactly matches precisely one Track entry your database. Searches are
+# case-sensitive.
+#
+# Playlists can be renamed and descriptions can be updated or removed. If you rename a
+# playlist, its slug will be regnenerated, breaking previous web links to said playlist.
 """
 
 

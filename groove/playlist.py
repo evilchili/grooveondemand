@@ -28,7 +28,7 @@ class Playlist:
         self._slug = slug
         self._name = name
         self._description = description
-        self._entries = None
+        self._entries = []
         self._record = None
         self._create_ok = create_ok
         self._deleted = False
@@ -62,12 +62,13 @@ class Playlist:
         return self._description
 
     @property
-    def summary(self):
-        return ' :: '.join([
-            f"[ {self.record.id} ]",
-            self.record.name,
-            f"http://{os.environ['HOST']}/{self.slug}",
-        ])
+    def info(self):
+        count = len(self.entries)
+        return f"{self.name}: {self.url} [{count} tracks]\n{self.description}\n"
+
+    @property
+    def url(self) -> str:
+        return f"http://{os.environ['HOST']}:{os.environ['PORT']}/{self.slug}"
 
     @property
     def slug(self) -> str:
@@ -83,28 +84,29 @@ class Playlist:
         Cache the playlist row from the database and return it. Optionally create it if it doesn't exist.
         """
         if not self._record:
-            self._record = self.get_or_create()
+            self.get_or_create()
         return self._record
 
     @property
-    def entries(self) -> Union[List, None]:
+    def entries(self) -> List:
         """
         Cache the list of entries on this playlist and return it.
         """
-        if self.record and not self._entries:
-            query = self.session.query(
-                db.entry,
-                db.track
-            ).filter(
-                (db.playlist.c.id == self.record.id)
-            ).filter(
-                db.entry.c.playlist_id == db.playlist.c.id
-            ).filter(
-                db.entry.c.track_id == db.track.c.id
-            ).order_by(
-                db.entry.c.track
-            )
-            self._entries = query.all()
+        if not self._entries:
+            if self.record:
+                query = self.session.query(
+                    db.entry,
+                    db.track
+                ).filter(
+                    (db.playlist.c.id == self.record.id)
+                ).filter(
+                    db.entry.c.playlist_id == db.playlist.c.id
+                ).filter(
+                    db.entry.c.track_id == db.track.c.id
+                ).order_by(
+                    db.entry.c.track
+                )
+                self._entries = query.all()
         return self._entries
 
     @property
@@ -120,11 +122,9 @@ class Playlist:
 
     @property
     def as_string(self) -> str:
-        if not self.exists:
-            return ''
-        text = f"{self.summary}\n"
-        for entry in self.entries:
-            text += f"  - {entry.track}  {entry.artist} - {entry.title}\n"
+        text = self.info
+        for (tracknum, entry) in enumerate(self.entries):
+            text += f"  - {tracknum+1}  {entry.artist} - {entry.title}\n"
         return text
 
     @property
@@ -132,7 +132,7 @@ class Playlist:
         template_vars = self.as_dict
         template_vars['entries'] = ''
         for entry in self.entries:
-            template_vars['entries'] += f"  - {entry.artist} - {entry.title}\n"
+            template_vars['entries'] += f'  - "{entry.artist}": "{entry.title}"\n'
         return EDITOR_TEMPLATE.format(**template_vars)
 
     def _get_tracks_by_path(self, paths: List[str]) -> List:
@@ -141,6 +141,14 @@ class Playlist:
         MultipleResultsFound are expected in the case of no matches and multiple matches, respectively.
         """
         return [self.session.query(db.track).filter(db.track.c.relpath.ilike(f"%{path}%")).one() for path in paths]
+
+    def _get_tracks_by_artist_and_title(self, entries: List[tuple]) -> List:
+        return [
+            self.session.query(db.track).filter(
+                db.track.c.artist == artist, db.track.c.title == title
+            ).one()
+            for (artist, title) in entries
+        ]
 
     def edit(self):
         edits = self.editor.edit(self)
@@ -154,7 +162,8 @@ class Playlist:
         self._slug = new.slug
         self._name = new.name.strip()
         self._description = new.description.strip()
-        self._record = self.save()
+        self._entries = new._entries
+        self.save()
 
     def add(self, paths: List[str]) -> int:
         """
@@ -198,13 +207,14 @@ class Playlist:
 
     def get_or_create(self, create_ok: bool = False) -> Row:
         try:
-            return self._get()
+            self._record = self._get()
+            return
         except NoResultFound:
             logging.debug(f"Could not find a playlist with slug {self.slug}.")
         if self.deleted:
             raise RuntimeError("Object has been deleted.")
         if self._create_ok or create_ok:
-            return self.save()
+            self.save()
 
     def _get(self):
         return self.session.query(db.playlist).filter(
@@ -237,9 +247,16 @@ class Playlist:
             'description': self.description
         }
         logging.debug(f"Saving values: {values}")
-        obj = self._update(values) if self._record else self._insert(values)
-        logging.debug(f"Saved playlist {obj.id} with slug {obj.slug}")
-        return obj
+        self._record = self._update(values) if self._record else self._insert(values)
+        logging.debug(f"Saved playlist {self._record.id} with slug {self._record.slug}")
+        self.save_entries()
+
+    def save_entries(self):
+        plid = self.record.id
+        stmt = delete(db.entry).where(db.entry.c.playlist_id == plid)
+        logging.debug(f"Deleting entries associated with playlist {plid}: {stmt}")
+        self.session.execute(stmt)
+        return self.create_entries(self.entries)
 
     def load(self):
         self.get_or_create(create_ok=False)
@@ -282,7 +299,7 @@ class Playlist:
         try:
             name = list(source.keys())[0].strip()
             description = (source[name]['description'] or '').strip()
-            return Playlist(
+            pl = Playlist(
                 slug=slugify(name),
                 name=name,
                 description=description,
@@ -291,7 +308,14 @@ class Playlist:
         except (IndexError, KeyError):
             PlaylistImportError("The specified source was not a valid playlist.")
 
+        pl._entries = pl._get_tracks_by_artist_and_title(entries=[
+            list(entry.items())[0] for entry in source[name]['entries']
+        ])
+        return pl
+
     def __eq__(self, obj):
+        logging.debug(f"Comparing obj to self:\n{obj.as_string}\n--\n{self.as_string}")
+        return obj.as_string == self.as_string
         for key in ('slug', 'name', 'description'):
             if getattr(obj, key) != getattr(self, key):
                 logging.debug(f"{key}: {getattr(obj, key)} != {getattr(self, key)}")
