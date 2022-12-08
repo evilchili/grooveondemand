@@ -5,7 +5,7 @@ from typing import Union, List
 
 from groove import db
 from groove.editor import PlaylistEditor, EDITOR_TEMPLATE
-from groove.exceptions import PlaylistImportError
+from groove.exceptions import PlaylistValidationError
 
 from slugify import slugify
 from sqlalchemy import func, delete
@@ -20,8 +20,8 @@ class Playlist:
     """
     def __init__(self,
                  slug: str,
+                 name: str,
                  session: Session,
-                 name: str = '',
                  description: str = '',
                  create_ok=True):
         self._session = session
@@ -114,9 +114,13 @@ class Playlist:
         """
         Return a dictionary of the playlist and its entries.
         """
-        if not self.exists:
-            return {}
-        playlist = dict(self.record)
+        playlist = {
+            'name': self.name,
+            'slug': self.slug,
+            'description': self.description
+        }
+        if self.record:
+            playlist.update(dict(self.record))
         playlist['entries'] = [dict(entry) for entry in self.entries]
         return playlist
 
@@ -225,7 +229,7 @@ class Playlist:
         stmt = db.playlist.insert(values)
         results = self.session.execute(stmt)
         self.session.commit()
-        logging.debug(f"Saved playlist with slug {self.slug}")
+        logging.debug(f"Inserted playlist with slug {self.slug}")
         return self.session.query(db.playlist).filter(
             db.playlist.c.id == results.inserted_primary_key[0]
         ).one()
@@ -246,7 +250,10 @@ class Playlist:
             'name': self.name,
             'description': self.description
         }
-        logging.debug(f"Saving values: {values}")
+        if not self.name:
+            raise PlaylistValidationError("This playlist has no name.")
+        if not self.slug:
+            raise PlaylistValidationError("This playlist has no slug.")
         self._record = self._update(values) if self._record else self._insert(values)
         logging.debug(f"Saved playlist {self._record.id} with slug {self._record.slug}")
         self.save_entries()
@@ -254,7 +261,7 @@ class Playlist:
     def save_entries(self):
         plid = self.record.id
         stmt = delete(db.entry).where(db.entry.c.playlist_id == plid)
-        logging.debug(f"Deleting entries associated with playlist {plid}: {stmt}")
+        logging.debug(f"Deleting stale entries associated with playlist {plid}: {stmt}")
         self.session.execute(stmt)
         return self.create_entries(self.entries)
 
@@ -273,6 +280,10 @@ class Playlist:
         Returns:
             int: The number of tracks added.
         """
+        if not tracks:
+            tracks = self.entries
+        if not tracks:
+            return 0
         maxtrack = self.session.query(func.max(db.entry.c.track)).filter_by(
             playlist_id=self.record.id
         ).one()[0] or 0
@@ -289,8 +300,24 @@ class Playlist:
         return len(tracks)
 
     @classmethod
+    def by_slug(cls, slug, session):
+        try:
+            row = session.query(db.playlist).filter(
+                db.playlist.c.slug == slug
+            ).one()
+        except NoResultFound as ex:
+            logging.error(f"Could not locate an existing playlist with slug {slug}.")
+            raise ex
+        return cls.from_row(row, session)
+
+    @classmethod
     def from_row(cls, row, session):
-        pl = Playlist(slug=row.slug, session=session)
+        pl = Playlist(
+            slug=row.slug,
+            name=row.name,
+            description=row.description,
+            session=session
+        )
         pl._record = row
         return pl
 
@@ -306,7 +333,7 @@ class Playlist:
                 session=session,
             )
         except (IndexError, KeyError):
-            PlaylistImportError("The specified source was not a valid playlist.")
+            PlaylistValidationError("The specified source was not a valid playlist.")
 
         pl._entries = pl._get_tracks_by_artist_and_title(entries=[
             list(entry.items())[0] for entry in source[name]['entries']

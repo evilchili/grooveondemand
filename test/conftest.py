@@ -5,6 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 import groove.db
+from  groove.playlist import Playlist
 
 from sqlalchemy import create_engine, insert
 from sqlalchemy.orm import sessionmaker
@@ -77,3 +78,13 @@ def db(in_memory_db):
         {'playlist_id': '3', 'track': '2', 'track_id': '3'},
     ])
     yield in_memory_db
+
+
+@pytest.fixture(scope='function')
+def empty_playlist(db):
+    return Playlist(
+        name='an empty playlist fixture',
+        slug='an-empty-playlist',
+        description='a fixture',
+        session=db
+    )

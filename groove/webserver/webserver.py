@@ -89,8 +89,9 @@ def serve_playlist(slug, db):
     Retrieve a playlist and its entries by a slug.
     """
     logging.debug(f"Looking up playlist: {slug}...")
-    playlist = Playlist(slug=slug, session=db, create_ok=False).load()
-    if not playlist.record:
+    try:
+        playlist = Playlist.by_slug(slug, session=db)
+    except NoResultFound:
         logging.debug(f"Playist {slug} doesn't exist.")
         return HTTPResponse(status=404, body="Not found")
     logging.debug(f"Loaded {playlist.record}")
@@ -113,9 +114,10 @@ def build():
 @bottle.auth_basic(is_authenticated)
 @server.route('/build/search/playlist/<slug>')
 def search_playlist(slug, db):
-    playlist = Playlist(slug=slug, session=db, create_ok=False).load()
-    if not playlist.record:
-        logging.debug(f"Playist {slug} doesn't exist.")
+    try:
+        playlist = Playlist.by_slug(slug, session=db)
+    except NoResultFound:
+        logging.debug(f"Playlist {slug} doesn't exist.")
         body = {}
     else:
         body = json.dumps(playlist.as_dict)

@@ -24,5 +24,5 @@ class load(BasePrompt):
             session=self.manager.session,
             create_ok=True
         )
-        print(self.parent.playlist.summary)
+        print(self.parent.playlist.info)
         return self.parent.commands['_playlist'].start()

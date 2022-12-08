@@ -23,7 +23,7 @@ class ConfigurationError(Exception):
     """
 
 
-class PlaylistImportError(Exception):
+class PlaylistValidationError(Exception):
     """
-    An error was discovered in a playlist template.
+    An error was discovered in the playlist definition.
     """
