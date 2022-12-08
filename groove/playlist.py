@@ -5,7 +5,7 @@ from typing import Union, List
 
 from groove import db
 from groove.editor import PlaylistEditor, EDITOR_TEMPLATE
-from groove.exceptions import PlaylistValidationError
+from groove.exceptions import PlaylistValidationError, TrackNotFoundError
 
 from slugify import slugify
 from sqlalchemy import func, delete
@@ -19,14 +19,16 @@ class Playlist:
     CRUD operations and convenience methods for playlists.
     """
     def __init__(self,
-                 slug: str,
                  name: str,
                  session: Session,
+                 slug: str = '',
                  description: str = '',
                  create_ok=True):
         self._session = session
-        self._slug = slug
         self._name = name
+        if not self._name:
+            raise PlaylistValidationError("Name cannot be empty.")
+        self._slug = slug or slugify(name)
         self._description = description
         self._entries = []
         self._record = None
@@ -79,11 +81,16 @@ class Playlist:
         return self._session
 
     @property
-    def record(self) -> Union[Row, None]:
+    def record(self) -> Union[Row, None, bool]:
         """
         Cache the playlist row from the database and return it. Optionally create it if it doesn't exist.
+
+        Returns:
+            None:   If we've never tried to get or create the record
+            False:  False if we've tried and failed to get the record
+            Row:    The record as it appears in the database.
         """
-        if not self._record:
+        if self._record is None:
             self.get_or_create()
         return self._record
 
@@ -98,7 +105,7 @@ class Playlist:
                     db.entry,
                     db.track
                 ).filter(
-                    (db.playlist.c.id == self.record.id)
+                    (db.playlist.c.id == self._record.id)
                 ).filter(
                     db.entry.c.playlist_id == db.playlist.c.id
                 ).filter(
@@ -144,15 +151,50 @@ class Playlist:
         Retrieve tracks from the database that match the specified path fragments. The exceptions NoResultFound and
         MultipleResultsFound are expected in the case of no matches and multiple matches, respectively.
         """
-        return [self.session.query(db.track).filter(db.track.c.relpath.ilike(f"%{path}%")).one() for path in paths]
+        for path in paths:
+            try:
+                yield self.session.query(db.track).filter(
+                    db.track.c.relpath.ilike(f"%{path}%")
+                ).one()
+            except NoResultFound:
+                raise TrackNotFoundError(f'Could not find track for path "{path}"')
 
     def _get_tracks_by_artist_and_title(self, entries: List[tuple]) -> List:
-        return [
-            self.session.query(db.track).filter(
-                db.track.c.artist == artist, db.track.c.title == title
+        for (artist, title) in entries:
+            try:
+                yield self.session.query(db.track).filter(
+                    db.track.c.artist == artist, db.track.c.title == title
+                ).one()
+            except NoResultFound:  # pragma: no cover
+                raise TrackNotFoundError(f'Could not find track "{artist}": "{title}"')
+
+    def _get(self):
+        try:
+            return self.session.query(db.playlist).filter(
+                db.playlist.c.slug == self.slug
             ).one()
-            for (artist, title) in entries
-        ]
+        except NoResultFound:
+            logging.debug(f"Could not find a playlist with slug {self.slug}.")
+        return False
+
+    def _insert(self, values):
+        stmt = db.playlist.insert(values)
+        results = self.session.execute(stmt)
+        self.session.commit()
+        logging.debug(f"Inserted playlist with slug {self.slug}")
+        return self.session.query(db.playlist).filter(
+            db.playlist.c.id == results.inserted_primary_key[0]
+        ).one()
+
+    def _update(self, values):
+        stmt = db.playlist.update().where(
+            db.playlist.c.id == self._record.id
+        ).values(values)
+        self.session.execute(stmt)
+        self.session.commit()
+        return self.session.query(db.playlist).filter(
+            db.playlist.c.id == self._record.id
+        ).one()
 
     def edit(self):
         edits = self.editor.edit(self)
@@ -182,11 +224,11 @@ class Playlist:
         """
         logging.debug(f"Attempting to add tracks matching: {paths}")
         try:
-            return self.create_entries(self._get_tracks_by_path(paths))
-        except NoResultFound:
+            return self.create_entries(list(self._get_tracks_by_path(paths)))
+        except NoResultFound:  # pragma: no cover
             logging.error("One or more of the specified paths do not match any tracks in the database.")
             return 0
-        except MultipleResultsFound:
+        except MultipleResultsFound:  # pragma: no cover
             logging.error("One or more of the specified paths matches multiple tracks in the database.")
             return 0
 
@@ -210,39 +252,13 @@ class Playlist:
         return plid
 
     def get_or_create(self, create_ok: bool = False) -> Row:
-        try:
+        if self._record is None:
             self._record = self._get()
-            return
-        except NoResultFound:
-            logging.debug(f"Could not find a playlist with slug {self.slug}.")
-        if self.deleted:
-            raise RuntimeError("Object has been deleted.")
-        if self._create_ok or create_ok:
-            self.save()
-
-    def _get(self):
-        return self.session.query(db.playlist).filter(
-            db.playlist.c.slug == self.slug
-        ).one()
-
-    def _insert(self, values):
-        stmt = db.playlist.insert(values)
-        results = self.session.execute(stmt)
-        self.session.commit()
-        logging.debug(f"Inserted playlist with slug {self.slug}")
-        return self.session.query(db.playlist).filter(
-            db.playlist.c.id == results.inserted_primary_key[0]
-        ).one()
-
-    def _update(self, values):
-        stmt = db.playlist.update().where(
-            db.playlist.c.id == self._record.id
-        ).values(values)
-        self.session.execute(stmt)
-        self.session.commit()
-        return self.session.query(db.playlist).filter(
-            db.playlist.c.id == self._record.id
-        ).one()
+        if not self._record:
+            if self.deleted:
+                raise PlaylistValidationError("Object has been deleted.")
+            if self._create_ok or create_ok:
+                self.save()
 
     def save(self) -> Row:
         values = {
@@ -264,10 +280,6 @@ class Playlist:
         logging.debug(f"Deleting stale entries associated with playlist {plid}: {stmt}")
         self.session.execute(stmt)
         return self.create_entries(self.entries)
-
-    def load(self):
-        self.get_or_create(create_ok=False)
-        return self
 
     def create_entries(self, tracks: List[Row]) -> int:
         """
@@ -322,7 +334,7 @@ class Playlist:
         return pl
 
     @classmethod
-    def from_yaml(cls, source, session):
+    def from_yaml(cls, source, session, create_ok=False):
         try:
             name = list(source.keys())[0].strip()
             description = (source[name]['description'] or '').strip()
@@ -331,13 +343,13 @@ class Playlist:
                 name=name,
                 description=description,
                 session=session,
+                create_ok=create_ok
             )
+            pl._entries = list(pl._get_tracks_by_artist_and_title(entries=[
+                list(entry.items())[0] for entry in source[name]['entries']
+            ]))
         except (IndexError, KeyError):
-            PlaylistValidationError("The specified source was not a valid playlist.")
-
-        pl._entries = pl._get_tracks_by_artist_and_title(entries=[
-            list(entry.items())[0] for entry in source[name]['entries']
-        ])
+            raise PlaylistValidationError("The specified source was not a valid playlist.")
         return pl
 
     def __eq__(self, obj):

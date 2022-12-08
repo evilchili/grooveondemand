@@ -10,7 +10,7 @@ EDITOR_TEMPLATE = """
 {name}:
   description: {description}
   entries:
-    {entries}
+{entries}
 
 # ------------------------------------------------------------------------------
 #

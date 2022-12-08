@@ -5,7 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 import groove.db
-from  groove.playlist import Playlist
+from groove.playlist import Playlist
 
 from sqlalchemy import create_engine, insert
 from sqlalchemy.orm import sessionmaker
@@ -51,9 +51,9 @@ def db(in_memory_db):
     # create tracks
     query = insert(groove.db.track)
     in_memory_db.execute(query, [
-        {'id': 1, 'relpath': 'UNKLE/Psyence Fiction/01 Guns Blazing (Drums of Death, Part 1).flac'},
-        {'id': 2, 'relpath': 'UNKLE/Psyence Fiction/02 UNKLE (Main Title Theme).flac'},
-        {'id': 3, 'relpath': 'UNKLE/Psyence Fiction/03 Bloodstain.flac'}
+        {'id': 1, 'artist': 'UNKLE', 'title': 'Guns Blazing', 'relpath': 'UNKLE/Psyence Fiction/01 Guns Blazing (Drums of Death, Part 1).flac'},
+        {'id': 2, 'artist': 'UNKLE', 'title': 'UNKLE', 'relpath': 'UNKLE/Psyence Fiction/02 UNKLE (Main Title Theme).flac'},
+        {'id': 3, 'artist': 'UNKLE', 'title': 'Bloodstain', 'relpath': 'UNKLE/Psyence Fiction/03 Bloodstain.flac'}
     ])
 
     # create playlists
@@ -82,9 +82,4 @@ def db(in_memory_db):
 
 @pytest.fixture(scope='function')
 def empty_playlist(db):
-    return Playlist(
-        name='an empty playlist fixture',
-        slug='an-empty-playlist',
-        description='a fixture',
-        session=db
-    )
+    return Playlist.by_slug('empty-playlist', session=db)

@@ -27,3 +27,9 @@ class PlaylistValidationError(Exception):
     """
     An error was discovered in the playlist definition.
     """
+
+
+class TrackNotFoundError(Exception):
+    """
+    The specified track doesn't exist.
+    """
