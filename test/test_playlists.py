@@ -6,8 +6,6 @@ from unittest.mock import MagicMock
 from groove import playlist, editor
 from groove.exceptions import PlaylistValidationError, TrackNotFoundError
 
-# 166-167, 200, 203-204, 227-228, 253->255, 255->exit, 270, 346-347
-
 
 def test_create(empty_playlist):
     assert empty_playlist.record.id

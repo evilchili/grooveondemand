@@ -33,7 +33,7 @@ class CommandPrompt(BasePrompt):
     def values(self):
         return [k for k in self.commands.keys() if not k.startswith('_')]
 
-    def default_completer(self, document, complete_event):
+    def default_completer(self, document, complete_event):  # pragma: no cover
         def _formatter(row):
             self._playlist = Playlist.from_row(row, self.manager.session)
             return self.playlist.record.name
@@ -47,19 +47,17 @@ class CommandPrompt(BasePrompt):
         name = cmd + ' ' + ' '.join(parts)
         if cmd in self.commands:
             self.commands[cmd].start(name)
-        else:
-            self._playlist = Playlist(
-                slug=slugify(name),
-                name=name,
-                session=self.manager.session,
-                create_ok=True
-            )
-            res = self.commands['_playlist'].start()
-            if res is False:
-                return res
-        return True
+            return True
+        self._playlist = Playlist(
+            slug=slugify(name),
+            name=name,
+            session=self.manager.session,
+            create_ok=True
+        )
+        res = self.commands['_playlist'].start()
+        return True and res
 
 
-def start():
+def start():  # pragma: no cover
     with database_manager() as manager:
         CommandPrompt(manager).start()

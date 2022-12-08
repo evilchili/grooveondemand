@@ -7,7 +7,7 @@ class BasePrompt(Completer):
     def __init__(self, manager=None, parent=None):
         super(BasePrompt, self).__init__()
 
-        if (not manager and not parent):
+        if (not manager and not parent):  # pragma: no cover
             raise RuntimeError("Must define either a database manager or a parent object.")
 
         self._prompt = ''

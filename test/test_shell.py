@@ -58,6 +58,7 @@ def test_help(monkeypatch, capsys, cmd_prompt, inputs, expected):
     output = capsys.readouterr()
     for txt in expected:
         assert txt in output.out
+    assert cmd_prompt.__doc__ == cmd_prompt.help_text
 
 
 @pytest.mark.parametrize('inputs, expected', [
@@ -69,3 +70,8 @@ def test_load(monkeypatch, caplog, cmd_prompt, inputs, expected):
     monkeypatch.setattr('groove.shell.base.prompt', response_factory([inputs]))
     cmd_prompt.start()
     assert expected in caplog.text
+
+
+def test_values(cmd_prompt):
+    for cmd in [cmd for cmd in cmd_prompt.commands.keys() if not cmd.startswith('_')]:
+        assert cmd in cmd_prompt.values

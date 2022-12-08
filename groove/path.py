@@ -44,7 +44,7 @@ def static_root():
     dirname = os.environ.get('STATIC_PATH', 'static')
     path = root() / Path(dirname)
     if not path.exists() or not path.is_dir():
-        raise ConfigurationError(
+        raise ConfigurationError(  # pragma: no cover
             f"The static assets directory {dirname} (STATIC_PATH) "
             f"doesn't exist, or isn't a directory.\n\n{_reinstall_hint}"
         )
@@ -56,7 +56,7 @@ def static(relpath, theme=None):
     if theme:
         root = theme.path / Path('static')
         if not root.is_dir():
-            raise ThemeConfigurationError(
+            raise ThemeConfigurationError(  # pragma: no cover
                 f"The themes directory {relpath} (THEMES_PATH) "
                 f"doesn't contain a 'static' directory."
             )
@@ -73,7 +73,7 @@ def themes_root():
     dirname = os.environ.get('THEMES_PATH', 'themes')
     path = root() / Path(dirname)
     if not path.exists() or not path.is_dir():
-        raise ConfigurationError(
+        raise ConfigurationError(  # pragma: no cover
             f"The themes directory {dirname} (THEMES_PATH) "
             f"doesn't exist, or isn't a directory.\n\n{_reinstall_hint}"
         )
@@ -84,7 +84,7 @@ def themes_root():
 def theme(name):
     path = themes_root() / Path(name)
     if not path.exists() or not path.is_dir():
-        available = ','.join(available_themes)
+        available = ','.join(available_themes())
         raise ThemeMissingException(
             f"A theme directory named {name} does not exist or isn't a directory. "
             "Perhaps there is a typo in the name?\n"
