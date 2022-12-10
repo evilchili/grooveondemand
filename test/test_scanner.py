@@ -38,6 +38,10 @@ def test_scanner(monkeypatch, in_memory_db, media):
     # replace the filesystem glob with the test fixture generator
     monkeypatch.setattr(scanner.MediaScanner, 'find_sources', MagicMock(return_value=media()))
 
+    # pretend things exist
+    monkeypatch.setattr(scanner.Path, 'exists', MagicMock(return_value=True))
+    monkeypatch.setattr(scanner.Path, 'is_dir', MagicMock(return_value=False))
+
     def mock_loader(path):
         return {
             'artist': 'foo',
