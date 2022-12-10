@@ -5,7 +5,7 @@ import music_tag
 
 from pathlib import Path
 from typing import Callable, Union, Iterable
-from sqlalchemy import func, delete
+from sqlalchemy import func
 
 import groove.db
 import groove.path
@@ -40,29 +40,8 @@ class MediaScanner:
         async def _do_import():
             logging.debug("Scanning filesystem (this may take a minute)...")
             for path in sources:
-                if path.exists() and not path.is_dir():
-                    asyncio.create_task(self._import_one_track(path))
+                asyncio.create_task(self._import_one_track(path))
         asyncio.run(_do_import())
-        self.db.commit()
-
-    def cleanup(self) -> int:
-        """
-        Check for the existence of every track in the databse.
-        """
-        async def _del(track):
-            path = self.root / Path(track.relpath)
-            if path.exists():
-                return
-            logging.info(f"Deleting missing track {track.relpath}")
-            self.db.execute(
-                delete(groove.db.track).where(groove.db.track.c.id == track.id)
-            )
-
-        async def _do_cleanup():
-            logging.debug("Locating stale track definitions in the database...")
-            for track in self.db.query(groove.db.track).all():
-                asyncio.create_task(_del(track))
-        asyncio.run(_do_cleanup())
         self.db.commit()
 
     def _get_tags(self, path):  # pragma: no cover

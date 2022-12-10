@@ -14,11 +14,6 @@ class BasePrompt(Completer):
         self._values = []
         self._parent = parent
         self._manager = manager
-        self._commands = {'help': self.help}
-
-    @property
-    def commands(self):
-        return self._commands
 
     @property
     def usage(self):
@@ -45,7 +40,7 @@ class BasePrompt(Completer):
 
     @property
     def values(self):
-        return [k for k in self.commands.keys() if not k.startswith('_')]
+        return self._values
 
     def get_completions(self, document, complete_event):
         word = document.get_word_before_cursor()
@@ -64,20 +59,13 @@ class BasePrompt(Completer):
     def start(self, cmd=''):
         while True:
             if not cmd:
-                cmd = prompt(f'{self.prompt} ', completer=self, complete_while_typing=True)
+                cmd = prompt(f'{self.prompt} ', completer=self)
             if not cmd:
                 return
             cmd, *parts = cmd.split()
             if not self.process(cmd, *parts):
                 return
             cmd = ''
-
-    def help(self, parts):
-        if not parts:
-            print(self.__doc__)
-        else:
-            print(getattr(self, parts[0]).__doc__)
-        return True
 
     def default_completer(self, document, complete_event):
         raise NotImplementedError()

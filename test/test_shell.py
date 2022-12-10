@@ -16,10 +16,6 @@ def response_factory(responses):
     return MagicMock(side_effect=responses + ([''] * 10))
 
 
-def test_commands(cmd_prompt):
-    assert cmd_prompt.commands.keys() == cmd_prompt.commands.keys()
-
-
 @pytest.mark.parametrize('inputs, expected', [
     (['stats'], 'Database contains 4 playlists'),  # match the db fixture
 ])

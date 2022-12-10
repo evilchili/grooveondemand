@@ -54,8 +54,8 @@ class CommandPrompt(BasePrompt):
             session=self.manager.session,
             create_ok=True
         )
-        self.commands['_playlist'].start()
-        return True
+        res = self.commands['_playlist'].start()
+        return True and res
 
 
 def start():  # pragma: no cover

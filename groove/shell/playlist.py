@@ -8,13 +8,20 @@ from groove import db
 
 
 class _playlist(BasePrompt):
-    """
-    PLAYLIST
-    """
+
+    def __init__(self, parent, manager=None):
+        super().__init__(manager=manager, parent=parent)
+        self._parent = parent
+        self._prompt = ''
+        self._commands = None
 
     @property
     def prompt(self):
         return f"{self.parent.playlist}\n{self.parent.playlist.slug}> "
+
+    @property
+    def values(self):
+        return self.commands.keys()
 
     @property
     def commands(self):
@@ -24,19 +31,8 @@ class _playlist(BasePrompt):
                 'delete': self.delete,
                 'add': self.add,
                 'edit': self.edit,
-                'help': self.help
             }
         return self._commands
-
-    def _add_track(self, text):
-        sess = self.parent.manager.session
-        try:
-            track = sess.query(db.track).filter(db.track.c.relpath == text).one()
-            self.parent.playlist.create_entries([track])
-        except NoResultFound:
-            print("No match for '{text}'")
-            return
-        return text
 
     def process(self, cmd, *parts):
         res = True
@@ -69,6 +65,16 @@ class _playlist(BasePrompt):
             if not text:
                 return True
             self._add_track(text)
+
+    def _add_track(self, text):
+        sess = self.parent.manager.session
+        try:
+            track = sess.query(db.track).filter(db.track.c.relpath == text).one()
+            self.parent.playlist.create_entries([track])
+        except NoResultFound:
+            print("No match for '{text}'")
+            return
+        return text
 
     def delete(self, parts):
         res = prompt(

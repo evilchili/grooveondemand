@@ -106,7 +106,6 @@ def scan(
     initialize()
     with database_manager() as manager:
         scanner = media_scanner(root=root, db=manager.session)
-        scanner.cleanup()
         count = scanner.scan()
         logging.info(f"Imported {count} new tracks.")
 

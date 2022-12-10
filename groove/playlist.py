@@ -66,7 +66,7 @@ class Playlist:
     @property
     def info(self):
         count = len(self.entries)
-        return f"{self.name}: {self.url} [{count} tracks]\n{self.description}"
+        return f"{self.name}: {self.url} [{count} tracks]\n{self.description}\n"
 
     @property
     def url(self) -> str:
@@ -133,7 +133,7 @@ class Playlist:
 
     @property
     def as_string(self) -> str:
-        text = self.info + self.description
+        text = self.info
         for (tracknum, entry) in enumerate(self.entries):
             text += f"  - {tracknum+1}  {entry.artist} - {entry.title}\n"
         return text
