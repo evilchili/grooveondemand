@@ -35,12 +35,10 @@ class _playlist(BasePrompt):
         return self._commands
 
     def process(self, cmd, *parts):
-        res = True
         if cmd in self.commands:
-            res = self.commands[cmd](parts)
-        else:
-            print(f"Command not understood: {cmd}")
-        return res is True
+            return True if self.commands[cmd](parts) else False
+        print(f"Command not understood: {cmd}")
+        return True
 
     def show(self, parts):
         print(self.parent.playlist)
