@@ -145,47 +145,6 @@ class Playlist:
         return text
 
     @property
-    def as_richtext(self) -> str:
-        title = f"\n [b]:headphones: {self.name}[/b]"
-        if self.description:
-            title += f"\n [italic]{self.description}[/italic]\n"
-        params = dict(
-            box=box.HORIZONTALS,
-            title=title,
-            title_justify='left',
-            caption=f"[link]{self.url}[/link]",
-            caption_justify='right',
-        )
-        if os.environ['CONSOLE_THEMES']:
-            params.update(
-                header_style='on #001321',
-                title_style='on #001321',
-                border_style='on #001321',
-                row_styles=['on #001321'],
-                caption_style='on #001321',
-                style='on #001321',
-            )
-        width = os.environ.get('CONSOLE_WIDTH', 'auto')
-        if width == 'expand':
-            params['expand'] = True
-        elif width != 'auto':
-            params['width'] = int(width)
-
-        table = Table(
-            Column('#', justify='right', width=4),
-            Column('Artist', justify='left'),
-            Column('Title', justify='left'),
-            **params
-        )
-        for (num, entry) in enumerate(self.entries):
-            table.add_row(
-                f"[text]{num+1}[/text]",
-                f"[artist]{entry.artist}[/artist]",
-                f"[title]{entry.title}[/title]"
-            )
-        return table
-
-    @property
     def as_yaml(self) -> str:
         template_vars = self.as_dict
         template_vars['description'] = indent(template_vars['description'], prefix='    ')

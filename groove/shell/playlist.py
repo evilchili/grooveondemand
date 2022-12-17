@@ -4,6 +4,8 @@ import os
 
 from sqlalchemy.exc import NoResultFound
 from textwrap import dedent, wrap
+from rich.table import Column
+from rich import box
 
 from groove import db
 from groove.exceptions import PlaylistValidationError
@@ -95,7 +97,27 @@ class _playlist(BasePrompt):
         return True
 
     def show(self, *parts):
-        self.parent.console.print(self.parent.playlist.as_richtext)
+        pl = self.parent.playlist
+        title = f"\n [b]:headphones: {pl.name}[/b]"
+        if pl.description:
+            title += f"\n [italic]{pl.description}[/italic]\n"
+        table = self.parent.console.table(
+            Column('#', justify='right', width=4),
+            Column('Artist', justify='left'),
+            Column('Title', justify='left'),
+            box=box.HORIZONTALS,
+            title=title,
+            title_justify='left',
+            caption=f"[link]{pl.url}[/link]",
+            caption_justify='right',
+        )
+        for (num, entry) in enumerate(pl.entries):
+            table.add_row(
+                f"[text]{num+1}[/text]",
+                f"[artist]{entry.artist}[/artist]",
+                f"[title]{entry.title}[/title]"
+            )
+        self.parent.console.print(table)
         return True
 
     def add(self, *parts):
