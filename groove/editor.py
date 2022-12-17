@@ -3,12 +3,17 @@ import os
 import subprocess
 import yaml
 
+from yaml.scanner import ScannerError
+from groove.exceptions import PlaylistValidationError
+
+
 from tempfile import NamedTemporaryFile
 
 
 EDITOR_TEMPLATE = """
 {name}:
-  description: {description}
+  description: |
+{description}
   entries:
 {entries}
 
@@ -60,10 +65,21 @@ class PlaylistEditor:
         return self._path
 
     def edit(self, playlist):
-        with self.path as fh:
-            fh.write(playlist.as_yaml.encode())
-        subprocess.check_call([os.environ['EDITOR'], self.path.name])
-        edits = self.read()
+        try:
+            with self.path as fh:
+                fh.write(playlist.as_yaml.encode())
+            subprocess.check_call([os.environ['EDITOR'], self.path.name])
+        except (IOError, OSError, FileNotFoundError) as e:
+            logging.error(e)
+            raise RuntimeError("Could not invoke the editor! If the error persists, try enabling DEBUG mode.")
+        try:
+            edits = self.read()
+        except ScannerError:
+            raise PlaylistValidationError(
+                f"An error occurred when importing the playlist definition. This is "
+                f"typically the result of a YAML syntax error; you can inspect the "
+                f"source for errors at {self._path.name}."
+            )
         self.cleanup()
         return edits
 

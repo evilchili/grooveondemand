@@ -1,10 +1,13 @@
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit import print_formatted_text, HTML
+from groove.console import Console
+
 
 
 class BasePrompt(Completer):
 
-    def __init__(self, manager=None, parent=None):
+    def __init__(self, manager=None, console=None, parent=None):
         super(BasePrompt, self).__init__()
 
         if (not manager and not parent):  # pragma: no cover
@@ -14,6 +17,14 @@ class BasePrompt(Completer):
         self._values = []
         self._parent = parent
         self._manager = manager
+        self._console = None
+        self._theme = None
+
+    @property
+    def console(self):
+        if not self._console:
+            self._console = Console(color_system='truecolor')
+        return self._console
 
     @property
     def usage(self):
@@ -56,10 +67,16 @@ class BasePrompt(Completer):
             except NotImplementedError:
                 pass
 
+    def help(self, parts):
+        self.console.print(
+            getattr(self, parts[0]).__doc__ if parts else self.help_text
+        )
+        return True
+
     def start(self, cmd=''):
         while True:
             if not cmd:
-                cmd = prompt(f'{self.prompt} ', completer=self)
+                cmd = self.console.prompt(self.prompt, completer=self)
             if not cmd:
                 return
             cmd, *parts = cmd.split()

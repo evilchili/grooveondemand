@@ -1,6 +1,7 @@
 import logging
 import os
 
+from textwrap import indent
 from typing import Union, List
 
 from groove import db
@@ -12,6 +13,11 @@ from sqlalchemy import func, delete
 from sqlalchemy.orm.session import Session
 from sqlalchemy.engine.row import Row
 from sqlalchemy.exc import NoResultFound, MultipleResultsFound
+
+from rich.table import Table, Column
+from rich import box
+
+from yaml.scanner import ScannerError
 
 
 class Playlist:
@@ -135,12 +141,54 @@ class Playlist:
     def as_string(self) -> str:
         text = self.info
         for (tracknum, entry) in enumerate(self.entries):
-            text += f"  - {tracknum+1}  {entry.artist} - {entry.title}\n"
+            text += f"  {tracknum+1:-3d}.  {entry.artist} - {entry.title}\n"
         return text
+
+    @property
+    def as_richtext(self) -> str:
+        title = f"\n [b]:headphones: {self.name}[/b]"
+        if self.description:
+            title += f"\n [italic]{self.description}[/italic]\n"
+        params = dict(
+            box=box.HORIZONTALS,
+            title=title,
+            title_justify='left',
+            caption=f"[link]{self.url}[/link]",
+            caption_justify='right',
+        )
+        if os.environ['CONSOLE_THEMES']:
+            params.update(
+                header_style='on #001321',
+                title_style='on #001321',
+                border_style='on #001321',
+                row_styles=['on #001321'],
+                caption_style='on #001321',
+                style='on #001321',
+            )
+        width = os.environ.get('CONSOLE_WIDTH', 'auto')
+        if width == 'expand':
+            params['expand'] = True
+        elif width != 'auto':
+            params['width'] = int(width)
+
+        table = Table(
+            Column('#', justify='right', width=4),
+            Column('Artist', justify='left'),
+            Column('Title', justify='left'),
+            **params
+        )
+        for (num, entry) in enumerate(self.entries):
+            table.add_row(
+                f"[text]{num+1}[/text]",
+                f"[artist]{entry.artist}[/artist]",
+                f"[title]{entry.title}[/title]"
+            )
+        return table
 
     @property
     def as_yaml(self) -> str:
         template_vars = self.as_dict
+        template_vars['description'] = indent(template_vars['description'], prefix='    ')
         template_vars['entries'] = ''
         for entry in self.entries:
             template_vars['entries'] += f'  - "{entry.artist}": "{entry.title}"\n'
@@ -200,10 +248,23 @@ class Playlist:
         edits = self.editor.edit(self)
         if not edits:
             return
-        new = Playlist.from_yaml(edits, self.session)
-        if new == self:
-            logging.debug("No changes detected.")
-            return
+        try:
+            new = Playlist.from_yaml(edits, self.session)
+            if new == self:
+                logging.debug("No changes detected.")
+                return
+        except (TypeError, ScannerError) as e:
+            logging.error(e)
+            raise PlaylistValidationError(
+                "An error occurred reading the input file; this is typically "
+                "the result of an error in the YAML structure."
+            )
+        except TrackNotFoundError as e:
+            logging.error(e)
+            raise PlaylistValidationError(
+                "One or more of the specified tracks "
+                "did not exactly match an entry in the database."
+            )
         logging.debug(f"Updating {self.slug} with new edits.")
         self._slug = new.slug
         self._name = new.name.strip()
@@ -345,10 +406,13 @@ class Playlist:
                 session=session,
                 create_ok=create_ok
             )
-            pl._entries = list(pl._get_tracks_by_artist_and_title(entries=[
-                list(entry.items())[0] for entry in source[name]['entries']
-            ]))
-        except (IndexError, KeyError):
+            if not source[name]['entries']:
+                pl._entries = []
+            else:
+                pl._entries = list(pl._get_tracks_by_artist_and_title(entries=[
+                    list(entry.items())[0] for entry in source[name]['entries']
+                ]))
+        except (IndexError, KeyError, AttributeError):
             raise PlaylistValidationError("The specified source was not a valid playlist.")
         return pl
 

@@ -11,9 +11,12 @@ class CommandPrompt(BasePrompt):
     def __init__(self, manager):
         super().__init__(manager=manager)
         self._playlist = None
-        self._prompt = "Groove on Demand interactive shell. Try 'help' for help.\ngroove>"
         self._completer = None
         self._commands = None
+        self._prompt = [
+            "[help]Groove on Demand interactive shell. Try 'help' for help.[/help]",
+            "groove"
+        ]
 
     @property
     def playlist(self):
