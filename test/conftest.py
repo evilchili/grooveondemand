@@ -10,6 +10,8 @@ from groove.playlist import Playlist
 from sqlalchemy import create_engine, insert
 from sqlalchemy.orm import sessionmaker
 
+from unittest.mock import MagicMock
+
 
 @pytest.fixture(autouse=True, scope='function')
 def env():
@@ -26,8 +28,11 @@ def auth():
 
 
 @pytest.fixture(scope='function')
-def in_memory_engine():
-    return create_engine('sqlite:///:memory:', future=True)
+def in_memory_engine(monkeypatch):
+    engine = create_engine('sqlite:///:memory:', future=True)
+    monkeypatch.setattr('groove.db.manager.create_engine',
+                        MagicMock(return_value=engine))
+    return engine
 
 
 @pytest.fixture(scope='function')
