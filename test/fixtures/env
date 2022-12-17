@@ -22,3 +22,7 @@ MEDIA_GLOB=*.mp3,*.flac,*.m4a
 
 # Set this value to enable debugging
 DEBUG=1
+
+EDITOR=ed
+CONSOLE_THEMES=True
+CONSOLE_WIDTH=80

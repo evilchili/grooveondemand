@@ -132,7 +132,7 @@ def test_playlist_inequality_tracks_differ(db):
 def test_as_yaml(db):
     expected = {
         'playlist one': {
-            'description': 'the first one',
+            'description': 'the first one\n',
             'entries': [
                 {'UNKLE': 'Guns Blazing'},
                 {'UNKLE': 'UNKLE'},

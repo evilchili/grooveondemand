@@ -14,9 +14,6 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy.engine.row import Row
 from sqlalchemy.exc import NoResultFound, MultipleResultsFound
 
-from rich.table import Table, Column
-from rich import box
-
 from yaml.scanner import ScannerError
 
 

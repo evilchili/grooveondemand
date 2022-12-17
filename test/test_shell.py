@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 
 @pytest.fixture
-def cmd_prompt(in_memory_engine, db):
+def cmd_prompt(monkeypatch, in_memory_engine, db):
     with database_manager() as manager:
         manager._session = db
         yield interactive_shell.CommandPrompt(manager)
@@ -20,7 +20,7 @@ def response_factory(responses):
     (['stats'], 'Database contains 4 playlists'),  # match the db fixture
 ])
 def test_stats(monkeypatch, capsys, cmd_prompt, inputs, expected):
-    monkeypatch.setattr('groove.shell.base.prompt', response_factory(inputs))
+    monkeypatch.setattr('groove.console.Console.prompt', response_factory(inputs))
     cmd_prompt.start()
     output = capsys.readouterr()
     assert expected in output.out
@@ -30,13 +30,13 @@ def test_stats(monkeypatch, capsys, cmd_prompt, inputs, expected):
     (['quit'], SystemExit),
 ])
 def test_quit(monkeypatch, capsys, cmd_prompt, inputs, expected):
-    monkeypatch.setattr('groove.shell.base.prompt', response_factory(inputs))
+    monkeypatch.setattr('groove.console.Console.prompt', response_factory(inputs))
     with pytest.raises(expected):
         cmd_prompt.start()
 
 
 def test_browse(monkeypatch, capsys, cmd_prompt):
-    monkeypatch.setattr('groove.shell.base.prompt', response_factory(['browse']))
+    monkeypatch.setattr('groove.console.Console.prompt', response_factory(['browse']))
     cmd_prompt.start()
     output = capsys.readouterr()
     assert 'Displaying 4 playlists' in output.out
@@ -49,11 +49,11 @@ def test_browse(monkeypatch, capsys, cmd_prompt):
 
 
 @pytest.mark.parametrize('inputs, expected', [
-    ('help', ['Available Commands', ' help ', ' stats ', ' browse ']),
-    ('help browse', ['Help for browse']),
+    (['help'], ['Available Commands', ' help ', ' stats ', ' browse ']),
+    (['help browse'], ['Help for browse']),
 ])
 def test_help(monkeypatch, capsys, cmd_prompt, inputs, expected):
-    monkeypatch.setattr('groove.shell.base.prompt', response_factory([inputs]))
+    monkeypatch.setattr('groove.console.Console.prompt', response_factory(inputs))
     cmd_prompt.start()
     output = capsys.readouterr()
     for txt in expected:
@@ -62,12 +62,12 @@ def test_help(monkeypatch, capsys, cmd_prompt, inputs, expected):
 
 
 @pytest.mark.parametrize('inputs, expected', [
-    ('load A New Playlist', 'a-new-playlist'),
-    ('new playlist', 'new-playlist'),
-    ('load', '')
+    (['load A New Playlist'], 'a-new-playlist'),
+    (['new playlist'], 'new-playlist'),
+    (['load'], '')
 ])
 def test_load(monkeypatch, caplog, cmd_prompt, inputs, expected):
-    monkeypatch.setattr('groove.shell.base.prompt', response_factory([inputs]))
+    monkeypatch.setattr('groove.console.Console.prompt', response_factory(inputs))
     cmd_prompt.start()
     assert expected in caplog.text
 
