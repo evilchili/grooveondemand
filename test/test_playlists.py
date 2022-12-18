@@ -6,6 +6,8 @@ from unittest.mock import MagicMock
 from groove import playlist, editor
 from groove.exceptions import PlaylistValidationError, TrackNotFoundError
 
+from yaml.scanner import ScannerError
+
 
 def test_create(empty_playlist):
     assert empty_playlist.record.id
@@ -172,6 +174,32 @@ def test_edit(monkeypatch, edits, expected, empty_playlist):
     )
     empty_playlist.edit()
     assert empty_playlist.name == expected
+
+
+@pytest.mark.parametrize('error', [TypeError, ScannerError, TrackNotFoundError])
+def test_edit_errors(monkeypatch, error, empty_playlist):
+    monkeypatch.setattr('groove.playlist.Playlist.from_yaml', MagicMock(
+        side_effect=error
+    ))
+    with pytest.raises(PlaylistValidationError):
+        empty_playlist.edit()
+
+
+@pytest.mark.parametrize('error', [IOError, OSError, FileNotFoundError])
+def test_edit_errors_in_editor(monkeypatch, error, empty_playlist):
+    monkeypatch.setattr('groove.editor.subprocess.check_call', MagicMock(
+        side_effect=error
+    ))
+    with pytest.raises(RuntimeError):
+        empty_playlist.edit()
+
+
+def test_edit_yaml_error_in_editor(monkeypatch, empty_playlist):
+    monkeypatch.setattr('groove.editor.PlaylistEditor.read', MagicMock(
+        side_effect=ScannerError
+    ))
+    with pytest.raises(PlaylistValidationError):
+        empty_playlist.edit()
 
 
 @pytest.mark.parametrize('slug', [None, ''])

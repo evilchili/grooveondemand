@@ -271,6 +271,10 @@ class Playlist:
     def get_or_create(self, create_ok: bool = False) -> Row:
         if self._record is None:
             self._record = self._get()
+            if self._record:
+                self._description = self._record.description
+                self._name = self._record.name
+                self._slug = self._record.slug
         if not self._record:
             if self.deleted:
                 raise PlaylistValidationError("Object has been deleted.")

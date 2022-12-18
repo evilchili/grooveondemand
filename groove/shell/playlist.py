@@ -1,4 +1,4 @@
-from .base import BasePrompt
+from .base import BasePrompt, command
 
 import os
 
@@ -18,10 +18,10 @@ class _playlist(BasePrompt):
     def __init__(self, parent, manager=None):
         super().__init__(manager=manager, parent=parent)
         self._parent = parent
-        self._commands = None
+        self._console = parent.console
 
     @property
-    def help_text(self):
+    def usage(self):
         synopsis = (
             f"You are currently editing the [b]{self.parent.playlist.name}[/b]"
             f" playlist. From this prompt you can quickly append new tracks "
@@ -33,7 +33,7 @@ class _playlist(BasePrompt):
 
         try:
             width = int(os.environ.get('CONSOLE_WIDTH', '80'))
-        except ValueError:
+        except ValueError:  # pragma: no cover
             width = 80
         synopsis = '\n        '.join(wrap(synopsis, width=width))
 
@@ -54,7 +54,7 @@ class _playlist(BasePrompt):
             [b]delete[/b]   Delete the playlist
             [b]help[/b]     This message
 
-            Try 'help command' for command-specific help.[/help]
+            Try 'help COMMAND' for command-specific help.[/help]
         """)
 
     @property
@@ -65,43 +65,50 @@ class _playlist(BasePrompt):
             f"[prompt]{self.parent.playlist.slug}[/prompt]",
         ]
 
-    @property
-    def values(self):
-        return self.commands.keys()
+    def start(self):
+        self.show()
+        super().start()
 
-    @property
-    def commands(self):
-        if not self._commands:
-            self._commands = {
-                'delete': self.delete,
-                'add': self.add,
-                'show': self.show,
-                'edit': self.edit,
-                'help': self.help
-            }
-        return self._commands
+    @command("""
+    [title]EDITING A PLAYLIST[/title]
 
-    def process(self, cmd, *parts):
-        if cmd in self.commands:
-            return True if self.commands[cmd](parts) else False
-        self.parent.console.error(f"Command not understood: {cmd}")
-        return True
+    Use the [b]edit[/b] commmand to edit a YAML-formatted versin of the playlist
+    in your external editor as specified by the $EDITOR environment variable.
 
+    You can use this feature to rename a playlist, change its description, and
+    delete or reorder the playlist's entries. Save and exit the file when you
+    are finished editing, and the playlist will be updated with your changes.
+
+    To abort the edit session, exit your editor without saving the file.
+
+    [title]USAGE[/title]
+
+        [link]playlist> edit[/link]
+    """)
     def edit(self, *parts):
         try:
             self.parent.playlist.edit()
-        except PlaylistValidationError as e:
-            self.parent.console.error(f"Changes were not saved: {e}")
+        except PlaylistValidationError as e:  # pragma: no cover
+            self.console.error(f"Changes were not saved: {e}")
         else:
             self.show()
         return True
 
+    @command("""
+    [title]VIEWS FOR THE VIEWMASTER[/title]
+
+    Use the [b]show[/b] command to display the contents of the current playlist.
+
+    [title]USAGE[/title]
+
+        [link]playlist> show[/link]
+    """)
     def show(self, *parts):
         pl = self.parent.playlist
         title = f"\n [b]:headphones: {pl.name}[/b]"
         if pl.description:
             title += f"\n [italic]{pl.description}[/italic]\n"
-        table = self.parent.console.table(
+        table = self.console.table(
             Column('#', justify='right', width=4),
             Column('Artist', justify='left'),
             Column('Title', justify='left'),
@@ -117,16 +124,34 @@ class _playlist(BasePrompt):
                 f"[artist]{entry.artist}[/artist]",
                 f"[title]{entry.title}[/title]"
             )
-        self.parent.console.print(table)
+        self.console.print(table)
         return True
 
+    @command("""
+    [title]ADDING TRACKS TO A PLAYLIST[/title]
+
+    Use the [b]add[/b] command to interactively add one or more tracks from
+    your media sources to the current playlist. At the prompt, start typing the
+    name of an artist, album, or song title; matches from the file names in
+    your library will be suggested automatically. To accept a match, hit <TAB>,
+    or use the arrow keys to choose a different suggestion.
+
+    Hit <ENTER> to add your selected track to the current playlist. You can
+    then add another track, or hit <ENTER> again to return to the playlist
+    editor.
+
+    [title]USAGE[/title]
+
+        [link]playlist> add[/link]
+        [link] ?> PATHNAME
+    """)
     def add(self, *parts):
-        self.parent.console.print(
+        self.console.print(
             "Add tracks one at a time by title. Hit Enter to finish."
         )
         added = False
         while True:
-            text = self.parent.console.prompt(
+            text = self.console.prompt(
                 [' ?'],
                 completer=self.manager.fuzzy_table_completer(
                     db.track,
@@ -147,26 +172,50 @@ class _playlist(BasePrompt):
         try:
             track = sess.query(db.track).filter(db.track.c.relpath == text).one()
             self.parent.playlist.create_entries([track])
-        except NoResultFound:
-            self.parent.console.error("No match for '{text}'")
+        except NoResultFound:  # pragma: no cover
+            self.console.error("No match for '{text}'")
             return
         return text
 
-    def delete(self, *parts):
-        res = self.parent.console.prompt([
+    @command("""
+    [title]DELETING A PLAYLIST[/title]
+    Use the [b]delete[/b] command to delete the current playlist. You will be
+    prompted to type DELETE, to ensure you really mean it. If you
+    enter anything other than DELETE, the delete request will
+    be aborted.
+
+    [danger]Deleting a playlist cannot be undone![/danger]
+
+    [title]USAGE[/title]
+
+        [link]playlist> delete[/link]
+        Type DELETE to permanently delete the playlist.
+        [link]DELETE playlist> DELETE
+    """)
+    def delete(self, parts):
+        res = self.console.prompt([
             f"[error]Type [b]DELETE[/b] to permanently delete the playlist "
             f'"{self.parent.playlist.record.name}".[/error]',
             f"[prompt]DELETE {self.parent.playlist.slug}[/prompt]",
         ])
         if res != 'DELETE':
-            self.parent.console.error("Delete aborted. No changes have been made.")
+            self.console.error("Delete aborted. No changes have been made.")
             return True
 
         self.parent.playlist.delete()
-        self.parent.console.print("Deleted the playlist.")
+        self.console.print("Deleted the playlist.")
         self.parent._playlist = None
         return False
 
-    def start(self):
-        self.show()
-        super().start()
+    @command("""
+    [title]HELP![/title]
+
+    The [b]help[/b] command will print usage information for whatever you're currently
+    doing. You can also ask for help on any command currently available.
+
+    [title]USAGE[/title]
+
+        [link]> help [COMMAND][/link]
+    """)
+    def help(self, parts):
+        super().help(parts)

@@ -71,6 +71,7 @@ class Console(_Console):
                 caption_style=background_style,
                 style=background_style,
             )
+        params['min_width'] = 80
         width = os.environ.get('CONSOLE_WIDTH', 'auto')
         if width == 'expand':
             params['expand'] = True
