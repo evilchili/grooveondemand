@@ -14,9 +14,11 @@ def test_missing_media_root(monkeypatch, root):
     with pytest.raises(ConfigurationError):
         path.media_root()
 
+
 def test_static(monkeypatch):
     assert path.static('foo')
     assert path.static('foo', theme=themes.load_theme('default_theme'))
+
 
 @pytest.mark.parametrize('root', ['/dev/null/missing', None])
 def test_missing_theme_root(monkeypatch, root):
@@ -32,5 +34,9 @@ def test_theme_no_path():
         path.theme('nope')
 
 
+def test_database_default(env):
+    assert path.database().relative_to(path.root())
+
+
 def test_database(env):
-    assert env['DATABASE_PATH'] in path.database().name
+    assert env['DATABASE_PATH'] in str(path.database().absolute())

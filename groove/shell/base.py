@@ -95,7 +95,7 @@ class BasePrompt(Completer):
     def autocomplete_values(self):
         return self._autocomplete_values
 
-    def get_completions(self, document, complete_event):
+    def get_completions(self, document, complete_event):  # pragma: no cover
         word = document.get_word_before_cursor()
         found = False
         for value in self.autocomplete_values:

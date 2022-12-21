@@ -33,3 +33,9 @@ class TrackNotFoundError(Exception):
     """
     The specified track doesn't exist.
     """
+
+
+class InvalidPathError(Exception):
+    """
+    The specified path was invalid -- either it was not the expected type or wasn't accessible.
+    """

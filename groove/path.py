@@ -102,4 +102,13 @@ def available_themes():
 
 
 def database():
-    return root() / Path(os.environ.get('DATABASE_PATH', 'groove_on_demand.db'))
+    path = os.environ.get('DATABASE_PATH', None)
+    if not path:
+        path = root()
+    else:  # pragma: no cover
+        path = Path(path).expanduser()
+        if not path.exists() or not path.is_dir():
+            raise ConfigurationError(
+                "DATABASE_PATH doesn't exist or isn't a directory.\n\n{_setup_hint}"
+            )
+    return path / Path('groove_on_demand.db')

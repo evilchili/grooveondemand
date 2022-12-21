@@ -19,6 +19,7 @@ def env():
     load_dotenv(Path('test/fixtures/env'))
     os.environ['GROOVE_ON_DEMAND_ROOT'] = str(root)
     os.environ['MEDIA_ROOT'] = str(root / Path('media'))
+    os.environ['DATABASE_PATH'] = ''
     return os.environ
 
 

@@ -1,11 +1,13 @@
 from slugify import slugify
 
 from groove.db.manager import database_manager
-from groove.shell.base import BasePrompt, command, register_command
+from groove.db.scanner import MediaScanner
+from groove.shell.base import BasePrompt, command
+from groove.exceptions import InvalidPathError
 from groove import db
 from groove.playlist import Playlist
 
-from rich.table import Table, Column
+from rich.table import Column
 from rich import box
 
 from sqlalchemy import func
@@ -61,6 +63,34 @@ class InteractiveShell(BasePrompt):
         self.load([name.strip()])
 
     @command("""
+    [title]SCANNING YOUR MEDIA[/title]
+
+    Use the [b]scan[/b] function to scan your media root for new, changed, and
+    deleted audio files. This process may take some time if you have a large
+    library!
+
+    Instead of scanning the entire MEDIA_ROOT, you can specify a PATH, which
+    must be a subdirectory of your MEDIA_ROOT. This is useful to import that
+    new new.
+
+    [title]USAGE[/title]
+
+        [link]> scan [PATH][/link]
+
+    """)
+    def scan(self, parts):
+        """
+        Scan your MEDIA_ROOT for changes.
+        """
+        path = ' '.join(parts) if parts else None
+        try:
+            scanner = MediaScanner(path=path, db=self.manager.session, console=self.console)
+        except InvalidPathError as e:
+            self.console.error(str(e))
+            return True
+        scanner.scan()
+
+    @command("""
     [title]LISTS FOR THE LIST LOVER[/title]
 
     The [b]list[/b] command will display a summary of all playlists currently stored
@@ -75,7 +105,6 @@ class InteractiveShell(BasePrompt):
         """
         List all playlists.
         """
-        count = self.manager.session.query(func.count(db.playlist.c.id)).scalar()
         table = self.console.table(
             Column('#', justify='right', width=4),
             Column('Name'),
@@ -181,6 +210,7 @@ class InteractiveShell(BasePrompt):
         """
         super().help(parts)
         return True
+
 
 def start():  # pragma: no cover
     with database_manager() as manager:

@@ -2,9 +2,6 @@
 GROOVE_ON_DEMAND_ROOT=.
 MEDIA_ROOT=.
 
-# where to store the database
-DATABASE_PATH=test.db
-
 # Admin user credentials
 USERNAME=test_username
 PASSWORD=test_password

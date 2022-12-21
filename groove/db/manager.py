@@ -1,8 +1,8 @@
-import os
-
 from prompt_toolkit.completion import Completion, FuzzyCompleter
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+import groove.path
 
 from . import metadata
 
@@ -37,7 +37,8 @@ class DatabaseManager:
     @property
     def engine(self):
         if not self._engine:
-            self._engine = create_engine(f"sqlite:///{os.environ.get('DATABASE_PATH')}?check_same_thread=False", future=True)
+            path = groove.path.database()
+            self._engine = create_engine(f"sqlite:///{path}?check_same_thread=False", future=True)
         return self._engine
 
     @property
