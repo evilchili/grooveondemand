@@ -48,7 +48,12 @@ Before creating playlists, you must scan your media and build a database of trac
 groove scan
 ```
 
-This may take a long time depending on the size of your library and the capabilities of your system. Progress will be displayed as the scan progresses.
+This may take a long time depending on the size of your library and the capabilities of your system. Progress will be displayed as the scan progresses:
+
+<pre>
+groove&gt; scan
+1:27:34 <font color="#70BC45">━━━━━━━━━━━━━━━</font> <font color="#70BC45">100%</font> <font color="#555555">|</font> <font color="#70BC45"> 29946</font> <font color="#F1F2F6"><b>total</b></font> <font color="#555555">|</font> <font color="#70BC45"> 29946</font> <font color="#F1F2F6"><b>new</b></font> <font color="#555555">|</font>   <font color="#F1F2F6">Scan of </font><font color="#9999FF">/mnt/grunt/music/FLAC</font><font color="#F1F2F6"> complete!</font>
+</pre>
 
 ## Start the Interactive Shell
 
