@@ -26,7 +26,7 @@ BASE_STYLE = {
 }
 
 
-def console_theme(theme_name: Union[str, None] = 'blue_train') -> dict:
+def console_theme(theme_name: Union[str, None] = None) -> dict:
     """
     Return a console theme as a dictionary.
 
@@ -35,8 +35,10 @@ def console_theme(theme_name: Union[str, None] = 'blue_train') -> dict:
     """
     cfg = ConfigParser()
     cfg.read_dict({'styles': BASE_STYLE})
+
+    theme_path = theme_name if theme_name else os.environ.get('DEFAULT_THEME', 'blue_train')
     cfg.read(theme(
-        Path(theme_name or os.environ['DEFAULT_THEME']) / Path('console.cfg')
+        Path(theme_path) / Path('console.cfg')
     ))
     return cfg['styles']
 
