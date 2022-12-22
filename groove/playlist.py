@@ -73,7 +73,7 @@ class Playlist:
 
     @property
     def url(self) -> str:
-        return f"http://{os.environ['HOST']}:{os.environ['PORT']}/{self.slug}"
+        return f"http://{os.environ['HOST']}:{os.environ['PORT']}/playlist/{self.slug}"
 
     @property
     def slug(self) -> str:

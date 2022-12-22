@@ -1,3 +1,4 @@
+import io
 import logging
 import os
 import sys
@@ -20,33 +21,33 @@ from groove.exceptions import ConfigurationError
 from groove.console import Console
 
 SETUP_HELP = """
-Please make sure you set MEDIA_ROOT and SECRET_KEY in your environment.
-By default, Groove on Demand will attempt to load these variables from
-~/.groove, which may contain the following variables as well. See also
-the --env paramter.
+# Please make sure you set MEDIA_ROOT and SECRET_KEY in your environment.
+# By default, Groove on Demand will attempt to load these variables from
+# ~/.groove, which may contain the following variables as well. See also
+# the --env paramter.
 
 # Set this one. The path containing your media files
 MEDIA_ROOT=
 
 # the kinds of files to import
-# MEDIA_GLOB=*.mp3,*.flac,*.m4a
+MEDIA_GLOB=*.mp3,*.flac,*.m4a
 
 # where to store the groove_on_demand.db sqlite database.
-# DATABASE_PATH=~
+DATABASE_PATH=~
 
 # Try 'groove themes' to see a list of available themes.
-# DEFAULT_THEME=blue_train
+DEFAULT_THEME=blue_train
 
 # Web interface configuration
-# HOST=127.0.0.1
-# PORT=2323
+HOST=127.0.0.1
+PORT=2323
 
 # Set this to a suitably random string.
-SECRET_KEY=much secret very private
+SECRET_KEY=
 
 # Console configuration
-# EDITOR=
-# CONSOLE_WIDTH=auto
+EDITOR=vim
+CONSOLE_WIDTH=auto
 """
 
 app = typer.Typer()
@@ -61,6 +62,7 @@ def main(
     )
 ):
     load_dotenv(env.expanduser())
+    load_dotenv(stream=io.StringIO(SETUP_HELP))
     debug = os.getenv('DEBUG', None)
     logging.basicConfig(
         format='%(message)s',
@@ -86,13 +88,8 @@ def setup(context: typer.Context):
     """
     (Re)Initialize Groove on Demand.
     """
-    print(dedent(
-        """
-        Interactive setup is not yet available. Sorry!
-
-        {SETUP_HELP}
-        """
-    ))
+    sys.stderr.write("Interactive setup is not yet available. Sorry!\n")
+    print(dedent(SETUP_HELP))
 
 
 @app.command()

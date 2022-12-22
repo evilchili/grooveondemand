@@ -1,4 +1,6 @@
 /*!
+ *  This player is a modified version of:
+ *
  *  Howler.js Audio Player Demo
  *  howlerjs.com
  *

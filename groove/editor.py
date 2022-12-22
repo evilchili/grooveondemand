@@ -68,7 +68,7 @@ class PlaylistEditor:
         try:
             with self.path as fh:
                 fh.write(playlist.as_yaml.encode())
-            subprocess.check_call([os.environ['EDITOR'], self.path.name])
+            subprocess.check_call([os.environ.get('EDITOR', 'vim'), self.path.name])
         except (IOError, OSError, FileNotFoundError) as e:
             logging.error(e)
             raise RuntimeError("Could not invoke the editor! If the error persists, try enabling DEBUG mode.")
