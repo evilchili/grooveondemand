@@ -9,7 +9,8 @@ _reinstall_hint = "You might need to reinstall Groove On Demand to fix this erro
 
 
 def root():
-    path = Path(__file__).parent.parent
+    devroot = os.environ.get('GROOVE_ON_DEMAND_DEVROOT', None)
+    path = (Path(devroot) if devroot else Path(__file__).parent).expanduser().absolute()
     logging.debug(f"Root is {path}")
     return Path(path)
 
