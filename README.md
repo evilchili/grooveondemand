@@ -12,27 +12,21 @@ Groove on Demand was developed against python 3.10 and should work on anything 3
 
 I have no idea if it will function on platforms besides Linux. Code was written to be portable but not tested to be portable. I also don't know if the dependencies support diverse platforms or not. `¯\_(ツ)_/¯`
 
-### 1. Download the latest release
+### 1. Download and install the latest release
 
 [ check the releases tab ]
 
 ```
-wget https://github.com/evilchili/grooveondemand/releases/download/beta/grooveondemand-0.9.tar.gz
+pip3 install https://github.com/evilchili/grooveondemand/releases/download/beta/grooveondemand-0.9.tar.gz
 ```
 
-### 2. Install 
-
-```
-pip3 install grooveondemand-0.9.tar.gz
-```
-
-### 3. Generate the default configuration
+### 2. Generate the default configuration
 
 ```
 ~/.local/bin/groove setup > ~/.groove
 ```
 
-### 4. Set the Media Root
+### 3. Set the Media Root
 
 Edit `~/.groove` and define `MEDIA_ROOT` to point to the directory containing your local audio files. For example:
 
