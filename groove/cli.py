@@ -19,6 +19,36 @@ from groove.webserver import webserver
 from groove.exceptions import ConfigurationError
 from groove.console import Console
 
+SETUP_HELP = """
+Please make sure you set MEDIA_ROOT and SECRET_KEY in your environment.
+By default, Groove on Demand will attempt to load these variables from
+~/.groove, which may contain the following variables as well. See also
+the --env paramter.
+
+# Set this one. The path containing your media files
+MEDIA_ROOT=
+
+# the kinds of files to import
+# MEDIA_GLOB=*.mp3,*.flac,*.m4a
+
+# where to store the groove_on_demand.db sqlite database.
+# DATABASE_PATH=~
+
+# Try 'groove themes' to see a list of available themes.
+# DEFAULT_THEME=blue_train
+
+# Web interface configuration
+# HOST=127.0.0.1
+# PORT=2323
+
+# Set this to a suitably random string.
+SECRET_KEY=much secret very private
+
+# Console configuration
+# EDITOR=
+# CONSOLE_WIDTH=auto
+"""
+
 app = typer.Typer()
 
 
@@ -47,7 +77,7 @@ def main(
         groove.path.themes_root()
         groove.path.database()
     except ConfigurationError as e:
-        sys.stderr.write(f'{e}\n')
+        sys.stderr.write(f'{e}\n\n{SETUP_HELP}')
         sys.exit(1)
 
 
@@ -60,33 +90,7 @@ def setup(context: typer.Context):
         """
         Interactive setup is not yet available. Sorry!
 
-        In the mean time, please make sure you set MEDIA_ROOT and SECRET_KEY
-        in your environment.  By default, Groove on Demand will attempt to load
-        these variables from ~/.groove, which may contain the following
-        variables as well. See also the --env paramter.
-
-        # Set this one. The path containing your media files
-        MEDIA_ROOT=
-
-        # the kinds of files to import
-        # MEDIA_GLOB=*.mp3,*.flac,*.m4a
-
-        # where to store the groove_on_demand.db sqlite database.
-        # DATABASE_PATH=~
-
-        # Try 'groove themes' to see a list of available themes.
-        # DEFAULT_THEME=blue_train
-
-        # Web interface configuration
-        # HOST=127.0.0.1
-        # PORT=2323
-
-        # Set this to a suitably random string.
-        SECRET_KEY=much secret very private
-
-        # Console configuration
-        # EDITOR=
-        # CONSOLE_WIDTH=auto
+        {SETUP_HELP}
         """
     ))
 

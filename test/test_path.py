@@ -20,10 +20,9 @@ def test_static(monkeypatch):
     assert path.static('foo', theme=themes.load_theme('default_theme'))
 
 
-@pytest.mark.parametrize('root', ['/dev/null/missing', None])
-def test_missing_theme_root(monkeypatch, root):
+def test_missing_theme_root(monkeypatch):
     broken_env = {k: v for (k, v) in os.environ.items()}
-    broken_env['GROOVE_ON_DEMAND_ROOT'] = root
+    broken_env['THEMES_PATH'] = '/dev/null/enoexist'
     monkeypatch.setattr(os, 'environ', broken_env)
     with pytest.raises(ConfigurationError):
         path.themes_root()

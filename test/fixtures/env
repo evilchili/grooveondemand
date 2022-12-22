@@ -1,25 +1,12 @@
-# Will be overwritten by test setup
-GROOVE_ON_DEMAND_ROOT=.
-MEDIA_ROOT=.
-
-# Admin user credentials
 USERNAME=test_username
 PASSWORD=test_password
-
-# Web interface configuration
 HOST=127.0.0.1
 PORT=2323
-THEMES_PATH=themes
-STATIC_PATH=static
 DEFAULT_THEME=default_theme
 SECRET_KEY=fnord
-
-# Media scanner configuration
 MEDIA_GLOB=*.mp3,*.flac,*.m4a
-
-# Set this value to enable debugging
 DEBUG=1
-
 EDITOR=ed
-CONSOLE_THEMES=True
 CONSOLE_WIDTH=80
+DATABASE_PATH=
+MEDIA_ROOT=

@@ -14,12 +14,11 @@ from unittest.mock import MagicMock
 
 
 @pytest.fixture(autouse=True, scope='function')
-def env():
+def env(monkeypatch):
     root = Path(__file__).parent / Path('fixtures')
+    monkeypatch.setattr('groove.path.root', MagicMock(return_value=str(root)))
     load_dotenv(Path('test/fixtures/env'))
-    os.environ['GROOVE_ON_DEMAND_ROOT'] = str(root)
     os.environ['MEDIA_ROOT'] = str(root / Path('media'))
-    os.environ['DATABASE_PATH'] = ''
     return os.environ
 
 

@@ -9,15 +9,7 @@ _reinstall_hint = "You might need to reinstall Groove On Demand to fix this erro
 
 
 def root():
-    path = os.environ.get('GROOVE_ON_DEMAND_ROOT', None)
-    if not path:
-        raise ConfigurationError(f"GROOVE_ON_DEMAND_ROOT is not defined in your environment.\n{_setup_hint}")
-    path = Path(path).expanduser()
-    if not path.exists() or not path.is_dir():
-        raise ConfigurationError(
-            "The Groove on Demand root directory (GROOVE_ON_DEMAND_ROOT) "
-            f"does not exist or isn't a directory.\n\n{_reinstall_hint}"
-        )
+    path = Path(__file__).parent.parent
     logging.debug(f"Root is {path}")
     return Path(path)
 
@@ -43,12 +35,12 @@ def media(relpath):
 def static_root():
     dirname = os.environ.get('STATIC_PATH', 'static')
     path = root() / Path(dirname)
+    logging.debug(f"Static root is {path}")
     if not path.exists() or not path.is_dir():
         raise ConfigurationError(  # pragma: no cover
             f"The static assets directory {dirname} (STATIC_PATH) "
             f"doesn't exist, or isn't a directory.\n\n{_reinstall_hint}"
         )
-    logging.debug(f"Static root is {path}")
     return path
 
 
