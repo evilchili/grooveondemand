@@ -16,7 +16,7 @@ from groove.webserver import requests, themes
 server = bottle.Bottle()
 
 
-def start(host: str, port: int, debug: bool) -> None:  # pragma: no cover
+def start(host: str = '127.0.0.1', port: int = 2323, debug: bool = False) -> None:  # pragma: no cover
     """
     Start the Bottle app.
     """

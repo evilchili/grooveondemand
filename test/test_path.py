@@ -35,7 +35,7 @@ def test_theme_no_path():
 
 
 def test_database_default(env):
-    assert path.database().relative_to(path.root())
+    assert path.database()
 
 
 def test_database(env):

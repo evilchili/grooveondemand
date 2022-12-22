@@ -69,7 +69,7 @@ class MediaScanner:
         console: Union[Console, None] = None,
     ) -> None:
         self._db = db
-        self._glob = tuple((glob or os.environ.get('MEDIA_GLOB')).split(','))
+        self._glob = tuple((glob or os.environ.get('MEDIA_GLOB', '*.mp3,*.flac,*.m4a')).split(','))
         self._root = groove.path.media_root()
         self._console = console or Console()
         self._scanned = 0

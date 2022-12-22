@@ -4,14 +4,14 @@ import os
 from pathlib import Path
 from groove.exceptions import ConfigurationError, ThemeMissingException, ThemeConfigurationError
 
-_setup_hint = "You may be able to solve this error by running 'groove setup'."
+_setup_hint = "You may be able to solve this error by running 'groove setup' or specifying the --env parameter."
 _reinstall_hint = "You might need to reinstall Groove On Demand to fix this error."
 
 
 def root():
     path = os.environ.get('GROOVE_ON_DEMAND_ROOT', None)
     if not path:
-        raise ConfigurationError(f"GROOVE_ON_DEMAND_ROOT is not defined in your environment.\n\n{_setup_hint}")
+        raise ConfigurationError(f"GROOVE_ON_DEMAND_ROOT is not defined in your environment.\n{_setup_hint}")
     path = Path(path).expanduser()
     if not path.exists() or not path.is_dir():
         raise ConfigurationError(
@@ -83,7 +83,7 @@ def themes_root():
 
 def theme(name):
     path = themes_root() / Path(name)
-    if not path.exists() or not path.is_dir():
+    if not path.exists():
         available = ','.join(available_themes())
         raise ThemeMissingException(
             f"A theme directory named {name} does not exist or isn't a directory. "
@@ -102,13 +102,9 @@ def available_themes():
 
 
 def database():
-    path = os.environ.get('DATABASE_PATH', None)
-    if not path:
-        path = root()
-    else:  # pragma: no cover
-        path = Path(path).expanduser()
-        if not path.exists() or not path.is_dir():
-            raise ConfigurationError(
-                "DATABASE_PATH doesn't exist or isn't a directory.\n\n{_setup_hint}"
-            )
+    path = Path(os.environ.get('DATABASE_PATH', '~')).expanduser()
+    if not path.exists() or not path.is_dir():
+        raise ConfigurationError(
+            "DATABASE_PATH doesn't exist or isn't a directory.\n\n{_setup_hint}"
+        )
     return path / Path('groove_on_demand.db')
