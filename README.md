@@ -17,7 +17,7 @@ I have no idea if it will function on platforms besides Linux. Code was written 
 [ check the releases tab ]
 
 ```
-wget https://github.com/evilchili/grooveondemand/releases/grooveondemand-0.9.tar.gz
+wget https://github.com/evilchili/grooveondemand/releases/download/beta/grooveondemand-0.9.tar.gz
 ```
 
 ### 2. Install 
