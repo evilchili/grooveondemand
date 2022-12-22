@@ -34,7 +34,7 @@ pip3 install grooveondemand-0.9.tar.gz
 
 ### 4. Set the Media Root
 
-Edit `~/.groove` and defined `MEDIA_ROOT` to point to the directory containing your local audio files. For example:
+Edit `~/.groove` and define `MEDIA_ROOT` to point to the directory containing your local audio files. For example:
 
 ```
 MEDIA_ROOT=/media/audio/lossless
