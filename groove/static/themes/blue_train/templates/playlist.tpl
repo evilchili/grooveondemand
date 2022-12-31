@@ -59,7 +59,7 @@
     <div id="playlist">
         <div id="list"></div>
     </div>
-  <div id='footer'>groove on demand : an <a alt="evilchili at liner notes dot club" href="https://linernotes.club/@evilchili">@evilchili</a> jam</div>
+    <div id='footer'>groove on demand : an <a alt="evilchili at liner notes dot club" href="https://linernotes.club/@evilchili">@evilchili</a> jam</div>
   </div>
 </div>
 </body>

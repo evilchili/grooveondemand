@@ -6,16 +6,21 @@ html {
   margin: 0;
   outline: 0;
   font-family: 'Clarendon MT Std', sans-serif;
+  font-size: 18px;
+}
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 480px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+      html { font-size: 24px; }
 }
 
 body {
   width: 100%;
   height: 100%;
-  padding: 0;
   margin: 0;
   overflow: hidden;
-  background: rgb(0,4,16);
-  background: linear-gradient(0deg, rgba(0,4,16,1) 31%, rgba(1,125,147,1) 97%);
+  background: rgb(0, 4, 16);
 }
 
 a, a:visited {
@@ -27,11 +32,13 @@ a:active, a:hover {
 }
 
 #container {
+    position: relative;
+    background: linear-gradient(0deg, rgba(0,4,16,1) 1%, rgba(1,125,147,1) 97%);
     overflow-x: wrap;
-    width: 96%;
-    height: 96%;
-    margin: auto;
-    margin-top: 1em;
+    overflow-y: auto;
+    width: calc(100% - 4em);
+    height: calc(100% - 4em);
+    padding: 2em;
 }
 
 #details {
@@ -181,10 +188,12 @@ a:active, a:hover {
 }
 .list-song {
     padding: 0.25em;
+    color: #70bc45;
 }
 .list-song:hover {
   cursor: pointer;
   background: #f1f2f6;
+  color: #000;
 }
 
 #footer {
@@ -194,7 +203,6 @@ a:active, a:hover {
     color: #888;
     font-size: 0.9em;
     letter-spacing: 0.1em;
-    margin: 0;
     margin-top: 1em;
     padding-top: 1em;
 }
@@ -257,3 +265,4 @@ a:active, a:hover {
   from { opacity: 1; }
   to   { opacity: 0; }
 }
+
