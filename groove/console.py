@@ -110,6 +110,13 @@ class Console(_Console):
         """
         super().print(txt, overflow=self._overflow, **kwargs)
 
+    def debug(self, txt: str, **kwargs) -> None:
+        """
+        Print text to the console with the current theme's debug style applied, if debugging is enabled.
+        """
+        if os.environ.get('DEBUG', None):
+            self.print(dedent(txt), style='debug')
+
     def error(self, txt: str, **kwargs) -> None:
         """
         Print text to the console with the current theme's error style applied.

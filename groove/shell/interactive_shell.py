@@ -2,6 +2,7 @@ from slugify import slugify
 
 from groove.db.manager import database_manager
 from groove.media.scanner import MediaScanner
+from groove.media.transcoder import Transcoder
 from groove.shell.base import BasePrompt, command
 from groove.exceptions import InvalidPathError
 from groove import db
@@ -89,6 +90,26 @@ class InteractiveShell(BasePrompt):
             self.console.error(str(e))
             return True
         scanner.scan()
+
+    @command(usage="""
+    [title]TRANSCODING[/title]
+
+    Groove on Demand will stream audio to web clients in the native format of your source media files, but for maximum
+    portability, performance, and interoperability with reverse proxies, it's a good idea to transcode to .webm first.
+    Use the [b]transcode[/b] command to cache transcoded copies of every track currently in a playlist that isn't
+    already in .webm format. Existing cache entries will be skipped. See also [b]cache[/b].
+
+    [title]USAGE[/title]
+
+        [link]> transcode[/link]
+    """)
+    def transcode(self, parts):
+        """
+        Run the transcoder.
+        """
+        tracks = self.manager.session.query(db.track).filter(db.entry.c.track_id == db.track.c.id).all()
+        transcoder = Transcoder(console=self.console)
+        transcoder.transcode([track['relpath'] for track in tracks])
 
     @command("""
     [title]LISTS FOR THE LIST LOVER[/title]
