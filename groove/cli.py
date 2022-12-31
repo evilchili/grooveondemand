@@ -51,6 +51,9 @@ DEFAULT_THEME=blue_train
 HOST=127.0.0.1
 PORT=2323
 
+# The URL to use when constructing links. Defaults to http://HOST:PORT.
+#BASE_URL=http://127.0.0.1:2323
+
 # Set this to a suitably random string.
 SECRET_KEY=
 

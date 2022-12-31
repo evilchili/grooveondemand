@@ -1,9 +1,17 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <title>{{playlist['name']}} - Groove On Demand</title>
+
   <meta charset="utf-8">
   <meta name="viewport" content="user-scalable=no">
-  <title>Groove On Demand</title>
+  <meta name="title" content="{{playlist['name']}}">
+  <meta name="description" content="{{playlist['description']}}">
+  <meta name="url" content="{{playlist['url']}}">
+  <meta name="type" content="audio">
+  <meta name="provider_name" content="Groove on Demand">
+  <meta name="html" "<iframe width=\"480\" height=\"270\" src=\"{{playlist['url']}}\" frameborder=\"0\" allowfullscreen=\"\"></iframe>">
+
   <link rel='stylesheet' href='/static/styles.css' />
   <link rel='stylesheet' href="https://fonts.cdnfonts.com/css/clarendon-mt-std" />
   <script defer crossorigin src='https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.core.min.js'></script>

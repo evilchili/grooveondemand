@@ -73,7 +73,8 @@ class Playlist:
 
     @property
     def url(self) -> str:
-        return f"http://{os.environ['HOST']}:{os.environ['PORT']}/playlist/{self.slug}"
+        base = os.environ.get('BASE_URL', f"http://{os.environ['HOST']}:{os.environ['PORT']}")
+        return f"{base}/playlist/{self.slug}"
 
     @property
     def slug(self) -> str:
@@ -127,7 +128,8 @@ class Playlist:
         playlist = {
             'name': self.name,
             'slug': self.slug,
-            'description': self.description
+            'description': self.description,
+            'url': self.url
         }
         if self.record:
             playlist.update(dict(self.record))
