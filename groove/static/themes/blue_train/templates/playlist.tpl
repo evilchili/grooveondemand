@@ -12,9 +12,15 @@
   <meta name="og:url" content="{{playlist['url']}}">
   <meta name="og:type" content="audio">
   <meta name="og:provider_name" content="Groove on Demand">
+  <meta name="og:image" content="/static/45.svg">
 
   <link rel='stylesheet' href='/static/styles.css' />
   <link rel='stylesheet' href="https://fonts.cdnfonts.com/css/clarendon-mt-std" />
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+
   <script defer crossorigin src='https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.core.min.js'></script>
   <script defer src='/static/player.js'></script>
   <script>
