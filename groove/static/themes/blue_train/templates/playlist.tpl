@@ -4,13 +4,14 @@
   <title>{{playlist['name']}} - Groove On Demand</title>
 
   <meta charset="utf-8">
-  <meta name="viewport" content="user-scalable=no">
-  <meta name="title" content="{{playlist['name']}}">
-  <meta name="description" content="{{playlist['description']}}">
-  <meta name="url" content="{{playlist['url']}}">
-  <meta name="type" content="audio">
-  <meta name="provider_name" content="Groove on Demand">
-  <meta name="html" "<iframe width=\"480\" height=\"270\" src=\"{{playlist['url']}}\" frameborder=\"0\" allowfullscreen=\"\"></iframe>">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{playlist['name']}}: {{playlist['description']}}">
+
+  <meta name="og:title" content="{{playlist['name']}}">
+  <meta name="og:description" content="{{playlist['description']}}">
+  <meta name="og:url" content="{{playlist['url']}}">
+  <meta name="og:type" content="audio">
+  <meta name="og:provider_name" content="Groove on Demand">
 
   <link rel='stylesheet' href='/static/styles.css' />
   <link rel='stylesheet' href="https://fonts.cdnfonts.com/css/clarendon-mt-std" />
