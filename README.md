@@ -23,7 +23,8 @@ pip3 install https://github.com/evilchili/grooveondemand/releases/download/beta/
 ### 2. Generate the default configuration
 
 ```
-~/.local/bin/groove setup > ~/.groove
+mkdir ~/.groove
+~/.local/bin/groove setup > ~/.groove/defaults
 ```
 
 ### 3. Set the Media Root

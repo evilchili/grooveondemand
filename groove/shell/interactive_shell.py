@@ -1,7 +1,7 @@
 from slugify import slugify
 
 from groove.db.manager import database_manager
-from groove.db.scanner import MediaScanner
+from groove.media.scanner import MediaScanner
 from groove.shell.base import BasePrompt, command
 from groove.exceptions import InvalidPathError
 from groove import db

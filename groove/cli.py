@@ -23,14 +23,23 @@ from groove.console import Console
 SETUP_HELP = """
 # Please make sure you set MEDIA_ROOT and SECRET_KEY in your environment.
 # By default, Groove on Demand will attempt to load these variables from
-# ~/.groove, which may contain the following variables as well. See also
-# the --env paramter.
+# ~/.groove/defaults, which may contain the following variables as well. See
+# also the --root paramter.
 
 # Set this one. The path containing your media files
 MEDIA_ROOT=
 
 # the kinds of files to import
 MEDIA_GLOB=*.mp3,*.flac,*.m4a
+
+# If defined, transcode media before streaming it, and cache it to disk. The
+# strings INFILE and OUTFILE will be replaced with the media source file and
+# the cached output location, respectively.
+#
+TRANSCODER=/usr/bin/ffmpeg -i INFILE -c:v libvpx-vp9 -crf 30 -b:v 0 -b:a 256k -c:a libopus OUTFILE
+
+# where to cache transcoded media files
+CACHE_ROOT=~/.groove/cache
 
 # where to store the groove_on_demand.db sqlite database.
 DATABASE_PATH=~
@@ -56,12 +65,12 @@ app = typer.Typer()
 @app.callback()
 def main(
     context: typer.Context,
-    env: Optional[Path] = typer.Option(
+    root: Optional[Path] = typer.Option(
         Path('~/.groove'),
         help="Path to the Groove on Demand environment",
     )
 ):
-    load_dotenv(env.expanduser())
+    load_dotenv(root.expanduser() / Path('defaults'))
     load_dotenv(stream=io.StringIO(SETUP_HELP))
     debug = os.getenv('DEBUG', None)
     logging.basicConfig(

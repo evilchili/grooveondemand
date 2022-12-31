@@ -5,7 +5,8 @@ from unittest.mock import MagicMock
 from sqlalchemy import func
 
 import groove.exceptions
-from groove.db import scanner, track
+from groove.media import scanner
+from groove.db import track
 
 
 def test_scanner(monkeypatch, in_memory_db):

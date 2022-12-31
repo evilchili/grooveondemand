@@ -9,7 +9,7 @@ def encode(args: List, uri: str) -> str:
     Encode a request and cryptographically sign it. This serves two purposes:
     First, it enables the handler that receives the request to verify that the
     request was meant for it, preventing various routing and relay-induced bugs.
-    Second, it ensures the request wasn't corrutped or tampered with during
+    Second, it ensures the request wasn't corrupted or tampered with during
     transmission.
 
     Args:

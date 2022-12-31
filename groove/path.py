@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from groove.exceptions import ConfigurationError, ThemeMissingException, ThemeConfigurationError
 
-_setup_hint = "You may be able to solve this error by running 'groove setup' or specifying the --env parameter."
+_setup_hint = "You may be able to solve this error by running 'groove setup' or specifying the --root parameter."
 _reinstall_hint = "You might need to reinstall Groove On Demand to fix this error."
 
 
@@ -27,8 +27,26 @@ def media_root():
     return path
 
 
+def cache_root():
+    path = os.environ.get('CACHE_ROOT', None)
+    if not path:
+        raise ConfigurationError(f"CACHE_ROOT is not defined in your environment.\n\n{_setup_hint}")
+    path = Path(path).expanduser()
+    if not path.exists() or not path.is_dir():
+        raise ConfigurationError(
+            "The cache_root directory (CACHE_ROOT) doesn't exist, or isn't a directory.\n\n{_setup_hint}"
+        )
+    logging.debug(f"Media cache root is {path}")
+    return path
+
+
 def media(relpath):
     path = media_root() / Path(relpath)
+    return path
+
+
+def transcoded_media(relpath):
+    path = cache_root() / Path(relpath)
     return path
 
 
