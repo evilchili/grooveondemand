@@ -36,9 +36,9 @@
     <tr>
         <td id='controls'>
             <div id='big_button' class='btn'>
-            <div id="loading"></div>
-            <div id="playBtn">⏵</div>
-            <div id="pauseBtn">⏸</div>
+                <div id="loading"></div>
+                <div id="playBtn"></div>
+                <div id="pauseBtn"></div>
             </div>
         </td>
         <td>
