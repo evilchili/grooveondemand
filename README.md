@@ -17,10 +17,10 @@ I have no idea if it will function on platforms besides Linux. Code was written 
 [ check the releases tab ]
 
 ```
-pip3 install https://github.com/evilchili/grooveondemand/releases/download/beta/grooveondemand-0.9.tar.gz
+pip3 install https://github.com/evilchili/grooveondemand/releases/download/beta/grooveondemand-0.10.tar.gz
 ```
 
-### 2. Generate the default configuration
+### 3. Generate the default configuration
 
 ```
 mkdir ~/.groove
@@ -29,7 +29,7 @@ mkdir ~/.groove
 
 ### 3. Set the Media Root
 
-Edit `~/.groove` and define `MEDIA_ROOT` to point to the directory containing your local audio files. For example:
+Edit `~/.groove/defaults` and define `MEDIA_ROOT` to point to the directory containing your local audio files. For example:
 
 ```
 MEDIA_ROOT=/media/audio/lossless

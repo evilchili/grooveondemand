@@ -78,8 +78,10 @@ def serve_track(request, track_id, db):
     except (NoResultFound, MultipleResultsFound):
         return HTTPResponse(status=404, body="Not found")
 
-    path = groove.path.media(track['relpath'])
-    logging.debug(f"Service track {path.name} from {path.parent}")
+    path = groove.path.transcoded_media(track['relpath'])
+    if not path.exists():
+        path = groove.path.media(track['relpath'])
+    logging.debug(f"Serving track {path.name}")
     return static_file(path.name, root=path.parent)
 
 

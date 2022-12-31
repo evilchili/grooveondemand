@@ -18,8 +18,6 @@ from rich.progress import (
 
 import groove.path
 
-from groove.exceptions import ConfigurationError
-
 
 @rich.repr.auto(angular=True)
 class Transcoder:
@@ -48,7 +46,8 @@ class Transcoder:
         count = len(sources)
 
         if not os.environ.get('TRANSCODER', None):
-            raise ConfigurationError("Cannot transcode tracks without a TRANSCODR defined in your environment.")
+            self.console.error("Cannot transcode tracks without a TRANSCODER defined in your environment.")
+            return
 
         cache = groove.path.cache_root()
         if not cache.exists():

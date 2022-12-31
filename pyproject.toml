@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "grooveondemand"
-version = "0.9"
+version = "0.10"
 description = "audio playlist server"
 authors = ["evilchili <evilchili@gmail.com>"]
 license = "MIT License"

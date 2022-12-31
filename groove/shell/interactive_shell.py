@@ -97,7 +97,9 @@ class InteractiveShell(BasePrompt):
     Groove on Demand will stream audio to web clients in the native format of your source media files, but for maximum
     portability, performance, and interoperability with reverse proxies, it's a good idea to transcode to .webm first.
     Use the [b]transcode[/b] command to cache transcoded copies of every track currently in a playlist that isn't
-    already in .webm format. Existing cache entries will be skipped. See also [b]cache[/b].
+    already in .webm format. Existing cache entries will be skipped.
+
+    The default Groove on Demand configuration uses ffmpeg; try [b]groove setup[/b] from the command-line.
 
     [title]USAGE[/title]
 

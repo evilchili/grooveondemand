@@ -34,8 +34,8 @@ MEDIA_GLOB=*.mp3,*.flac,*.m4a
 
 # If defined, transcode media before streaming it, and cache it to disk. The
 # strings INFILE and OUTFILE will be replaced with the media source file and
-# the cached output location, respectively.
-#
+# the cached output location, respectively. The default below uses ffmpeg to
+# transcode to webm with a reasonable trade-off between file size and quality.
 TRANSCODER=/usr/bin/ffmpeg -i INFILE -c:v libvpx-vp9 -crf 30 -b:v 0 -b:a 256k -c:a libopus OUTFILE
 
 # where to cache transcoded media files
